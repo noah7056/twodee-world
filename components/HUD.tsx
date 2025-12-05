@@ -75,6 +75,10 @@ const HUD: React.FC<HUDProps> = (props) => {
                     </div>
                 )}
 
+                <div className="fixed bottom-1 right-1 text-[10px] text-white/30 pointer-events-none z-50">
+                    v0.1.1-drop-fix
+                </div>
+
                 {!isInventoryOpen && screen === 'game' && (
                     <InventoryBar
                         inventory={props.inventory}
