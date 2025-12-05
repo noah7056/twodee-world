@@ -30,6 +30,8 @@ interface HUDProps {
     handleCraft: any;
     handleInventoryAction: any;
     handleDropCursorItem: any;
+    handleDropFromCursor: (count: number) => void;
+    handleDropStack: (context: string, index: number) => void;
     handleUseItem: any;
     moveItemLegacy: any;
     setScreen: (s: any) => void;
@@ -65,7 +67,7 @@ const HUD: React.FC<HUDProps> = (props) => {
                         </div>
                     </div>
                 )}
-                
+
                 {isSaving && (
                     <div className="fixed bottom-4 right-4 pointer-events-none z-40 flex items-center gap-2 text-white/70 animate-pulse">
                         <Save size={20} />
@@ -74,9 +76,9 @@ const HUD: React.FC<HUDProps> = (props) => {
                 )}
 
                 {!isInventoryOpen && screen === 'game' && (
-                    <InventoryBar 
-                        inventory={props.inventory} 
-                        selectedIndex={props.selectedItemIndex} 
+                    <InventoryBar
+                        inventory={props.inventory}
+                        selectedIndex={props.selectedItemIndex}
                         onSelect={props.setSelectedItemIndex}
                         onMoveItem={props.moveItemLegacy}
                         onUseItem={props.handleUseItem}
@@ -87,7 +89,7 @@ const HUD: React.FC<HUDProps> = (props) => {
                     />
                 )}
 
-                <FullInventory 
+                <FullInventory
                     isOpen={isInventoryOpen}
                     onClose={() => setIsInventoryOpen(false)}
                     inventory={props.inventory}
@@ -102,10 +104,12 @@ const HUD: React.FC<HUDProps> = (props) => {
                     equipment={props.equipment}
                     cursorStack={props.cursorStack}
                     onDropCursor={props.handleDropCursorItem}
+                    onDropFromCursor={props.handleDropFromCursor}
+                    onDropStack={props.handleDropStack}
                 />
 
                 {screen === 'paused' && (
-                    <PauseMenu 
+                    <PauseMenu
                         onResume={() => props.setScreen('game')}
                         onHowToPlay={() => props.setScreen('howto_ingame')}
                         onSettings={() => props.setScreen('settings_ingame')}

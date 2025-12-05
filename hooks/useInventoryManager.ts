@@ -18,6 +18,48 @@ export const useInventoryManager = (
     const [cursorStack, setCursorStack] = useState<InventoryItem | null>(null);
     const [dropAction, setDropAction] = useState<InventoryItem | null>(null);
 
+    const handleDropFromCursor = (count: number) => {
+        if (!cursorStack) return;
+
+        const dropCount = Math.min(count, cursorStack.count);
+        const itemToDrop = { ...cursorStack, count: dropCount };
+
+        setDropAction(itemToDrop);
+
+        const remaining = cursorStack.count - dropCount;
+        if (remaining > 0) {
+            setCursorStack({ ...cursorStack, count: remaining });
+        } else {
+            setCursorStack(null);
+        }
+    };
+
+    const handleDropStack = (context: 'player' | 'container' | 'equip' | 'backpack', index: number | string) => {
+        let list: (InventoryItem | null)[] = [];
+        let setList: any;
+
+        if (context === 'player') {
+            list = [...inventory];
+            setList = setInventory;
+        } else if (context === 'container') {
+            // Logic to handle container drops if needed, but usually we drop from player inv
+            // For now, let's support player inv primarily
+            return;
+        } else {
+            return;
+        }
+
+        const idx = index as number;
+        const item = list[idx];
+        if (!item) return;
+
+        setDropAction(item);
+        list[idx] = null;
+        setList(list);
+        setStatusMessage(`Dropped ${ITEM_NAMES[item.type]}`);
+    };
+
+
     const handleUseItem = (idx: number) => {
         const item = inventory[idx];
         if (!item) return;
@@ -58,7 +100,7 @@ export const useInventoryManager = (
                 if (needed <= 0) break;
                 const currentItem = newInventory[i];
                 if (currentItem && currentItem.type === ing.type) {
-                    if (currentItem.count > needed) { currentItem.count -= needed; needed = 0; } 
+                    if (currentItem.count > needed) { currentItem.count -= needed; needed = 0; }
                     else { needed -= currentItem.count; newInventory[i] = null; }
                 }
             }
@@ -69,7 +111,7 @@ export const useInventoryManager = (
             newItem.durability = recipe.initialDurability;
             newItem.maxDurability = recipe.initialDurability;
         }
-        
+
         if (newItem.type === ItemType.BACKPACK) {
             newItem.contents = Array(BACKPACK_SIZE).fill(null);
         }
@@ -88,18 +130,18 @@ export const useInventoryManager = (
             setStatusMessage(`Crafted ${ITEM_NAMES[recipe.result]}!`);
         } else {
             // Complex cursor stacking logic omitted for brevity, fallback to simple add
-             const emptyIdx = newInventory.findIndex(i => i === null);
-             if (emptyIdx >= 0) {
-                 newInventory[emptyIdx] = newItem;
-                 setInventory(newInventory);
-             } else {
-                 setDropAction(newItem);
-                 setStatusMessage("Inventory full! Item dropped.");
-             }
+            const emptyIdx = newInventory.findIndex(i => i === null);
+            if (emptyIdx >= 0) {
+                newInventory[emptyIdx] = newItem;
+                setInventory(newInventory);
+            } else {
+                setDropAction(newItem);
+                setStatusMessage("Inventory full! Item dropped.");
+            }
         }
     };
 
-    const handleInventoryAction = (context: 'player' | 'container' | 'equip' | 'backpack', index: number | string, button: number, containerItems?: (InventoryItem|null)[], setContainerItems?: any) => {
+    const handleInventoryAction = (context: 'player' | 'container' | 'equip' | 'backpack', index: number | string, button: number, containerItems?: (InventoryItem | null)[], setContainerItems?: any) => {
         let list: (InventoryItem | null)[] = [];
         let setList: any;
 
@@ -110,17 +152,17 @@ export const useInventoryManager = (
             list = [...(containerItems || [])];
             setList = setContainerItems;
         } else if (context === 'backpack') {
-             if (equipment.bag && equipment.bag.contents) {
-                 list = [...equipment.bag.contents];
-                 setList = (newContents: (InventoryItem | null)[]) => {
-                     setEquipment(prev => ({
-                         ...prev,
-                         bag: prev.bag ? { ...prev.bag, contents: newContents } : null
-                     }));
-                 };
-             } else {
-                 return; // No backpack or no contents
-             }
+            if (equipment.bag && equipment.bag.contents) {
+                list = [...equipment.bag.contents];
+                setList = (newContents: (InventoryItem | null)[]) => {
+                    setEquipment(prev => ({
+                        ...prev,
+                        bag: prev.bag ? { ...prev.bag, contents: newContents } : null
+                    }));
+                };
+            } else {
+                return; // No backpack or no contents
+            }
         }
 
         if (context === 'equip') {
@@ -163,9 +205,9 @@ export const useInventoryManager = (
                     // Prevent placing Backpack inside Backpack (context check)
                     if (context === 'backpack' && cursorStack.type === ItemType.BACKPACK) {
                         setStatusMessage("Can't put a backpack inside another!");
-                        return; 
+                        return;
                     }
-                    
+
                     list[idx] = { ...cursorStack, count: 1 };
                     setCursorStack(cursorStack.count > 1 ? { ...cursorStack, count: cursorStack.count - 1 } : null);
                 } else if (slotItem.type === cursorStack.type && slotItem.count < MAX_STACK_SIZE && !slotItem.durability && !slotItem.contents) {
@@ -174,7 +216,7 @@ export const useInventoryManager = (
                 }
             } else if (slotItem) {
                 // Split half
-                if (context === 'player') { handleUseItem(idx); } 
+                if (context === 'player') { handleUseItem(idx); }
                 else {
                     const half = Math.ceil(slotItem.count / 2);
                     setCursorStack({ ...slotItem, count: half });
@@ -182,15 +224,15 @@ export const useInventoryManager = (
                 }
             }
         }
-        
+
         // Prevent putting backpack in backpack in full swap cases
         if (context === 'backpack') {
-             if (list[idx]?.type === ItemType.BACKPACK) {
-                 // Revert logic if user swapped a backpack into the backpack slots
-                 // This is a simplified guard; robust recursion prevention is better but this covers main interactions
-                 // Actually difficult to revert easily here without deeper logic, but let's assume standard behavior.
-                 // Ideally we prevent the swap at the start.
-             }
+            if (list[idx]?.type === ItemType.BACKPACK) {
+                // Revert logic if user swapped a backpack into the backpack slots
+                // This is a simplified guard; robust recursion prevention is better but this covers main interactions
+                // Actually difficult to revert easily here without deeper logic, but let's assume standard behavior.
+                // Ideally we prevent the swap at the start.
+            }
         }
 
         setList(list);
@@ -203,6 +245,8 @@ export const useInventoryManager = (
         dropAction, setDropAction,
         handleUseItem,
         handleCraft,
-        handleInventoryAction
+        handleInventoryAction,
+        handleDropFromCursor,
+        handleDropStack
     };
 };
