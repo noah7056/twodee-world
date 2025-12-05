@@ -1,11 +1,11 @@
 
 
 import { World, Player, Entity, EntityType, DroppedItem, TileType, ItemType, InventoryItem, Settings, Particle } from '../types';
-import { 
-    TILE_SIZE, CHUNK_SIZE, PLAYER_SPEED, RUN_SPEED_MULTIPLIER, WATER_SPEED_MULTIPLIER, 
-    COBWEB_SPEED_MULTIPLIER, SNOW_SPEED_MULTIPLIER, STAMINA_DRAIN_RATE, DROWN_DELAY, DROWN_DAMAGE, POISON_CONFIG, 
-    BUSH_DAMAGE, CACTUS_DAMAGE, BOAT_STATS, MAX_STACK_SIZE, ITEM_NAMES, COLORS, 
-    COLLIDABLE_TILES, INTERACTABLE_TILES, BREAK_TIMES, TOOL_CONFIG, COW_STATS, 
+import {
+    TILE_SIZE, CHUNK_SIZE, PLAYER_SPEED, RUN_SPEED_MULTIPLIER, WATER_SPEED_MULTIPLIER,
+    COBWEB_SPEED_MULTIPLIER, SNOW_SPEED_MULTIPLIER, STAMINA_DRAIN_RATE, DROWN_DELAY, DROWN_DAMAGE, POISON_CONFIG,
+    BUSH_DAMAGE, CACTUS_DAMAGE, BOAT_STATS, MAX_STACK_SIZE, ITEM_NAMES, COLORS,
+    COLLIDABLE_TILES, INTERACTABLE_TILES, BREAK_TIMES, TOOL_CONFIG, COW_STATS,
     SNAKE_STATS, SCORPION_STATS, SPIDER_STATS, POISON_SPIDER_STATS, CONTAINER_SIZE, GROWTH_TIME,
     CHARM_CONFIG, ARROW_STATS, SNOWBALL_STATS, RABBIT_STATS, POISON_ARROW_STATS, POISON_SNAKE_STATS
 } from '../constants';
@@ -53,7 +53,7 @@ const checkCollision = (world: World, x: number, y: number) => {
     const tileY = Math.floor(y);
     const tile = getTileAt(world, tileX, tileY);
     const obj = getObjectAt(world, tileX, tileY);
-    if (tile === null) return true; 
+    if (tile === null) return true;
     if (tile === TileType.WATER) return false;
     // Allow walking through these
     if (obj === TileType.CLAM || obj === TileType.SAPLING || obj === TileType.PINE_SAPLING || obj === TileType.BUSH_SAPLING || obj === TileType.BUSH || obj === TileType.TALL_GRASS || obj === TileType.COBWEB || obj === TileType.WHEAT_CROP || obj === TileType.WHEAT_PLANT || obj === TileType.SNOW_PILE || obj === TileType.SNOW_BLOCK) return false;
@@ -99,8 +99,8 @@ export const updateGame = (
     isInventoryOpen: boolean,
     refs: {
         driving: { current: string | null },
-        breaking: { current: {x: number, y: number, timer: number, maxTime: number} | null },
-        fishing: { current: {x: number, y: number, timer: number} | null },
+        breaking: { current: { x: number, y: number, timer: number, maxTime: number } | null },
+        fishing: { current: { x: number, y: number, timer: number } | null },
         placeCooldown: { current: number },
         attackCooldown: { current: number },
         drownTimer: { current: number },
@@ -128,7 +128,7 @@ export const updateGame = (
     // Add 1 for buffer.
     const chunksRadiusX = Math.ceil((screenW / zoom) / (CHUNK_SIZE * TILE_SIZE) / 2) + 1;
     const chunksRadiusY = Math.ceil((screenH / zoom) / (CHUNK_SIZE * TILE_SIZE) / 2) + 1;
-    
+
     // Clamp to minimum 1 to ensure at least 3x3 is generated
     const rX = Math.max(1, chunksRadiusX);
     const rY = Math.max(1, chunksRadiusY);
@@ -150,11 +150,11 @@ export const updateGame = (
 
         if (keys[settings.keybinds.run] && refs.driving.current) {
             refs.driving.current = null;
-            player.x += 1.0; 
+            player.x += 1.0;
             callbacks.onStatusUpdate("Exited Boat");
         }
 
-        const angle = Math.atan2(mouse.y - screenH/2, mouse.x - screenW/2);
+        const angle = Math.atan2(mouse.y - screenH / 2, mouse.x - screenW / 2);
         player.rotation = angle;
         const deg = (angle * 180) / Math.PI;
         if (deg >= -45 && deg < 45) player.facing = 'right';
@@ -167,7 +167,7 @@ export const updateGame = (
     let isMoving = (dx !== 0 || dy !== 0) && !isDriving;
     // Fix: Ensure we drain stamina if running
     const isRunning = keys[settings.keybinds.run] && player.stamina > 0 && isMoving && !isDriving;
-    
+
     // Cancel Fishing if moving
     if (isMoving && refs.fishing.current) {
         refs.fishing.current = null;
@@ -180,10 +180,10 @@ export const updateGame = (
     const isWater = tileUnder === TileType.WATER;
 
     let speed = PLAYER_SPEED;
-    if (isRunning) { 
-        speed *= RUN_SPEED_MULTIPLIER; 
-        player.stamina = Math.max(0, player.stamina - (STAMINA_DRAIN_RATE * deltaTime)); 
-    } 
+    if (isRunning) {
+        speed *= RUN_SPEED_MULTIPLIER;
+        player.stamina = Math.max(0, player.stamina - (STAMINA_DRAIN_RATE * deltaTime));
+    }
 
     // Apply Charm Speed Buff
     if (player.equipment.accessory?.type === ItemType.CHARM) {
@@ -193,9 +193,9 @@ export const updateGame = (
     if (isWater && !isDriving) {
         speed *= WATER_SPEED_MULTIPLIER;
         refs.drownTimer.current += deltaTime;
-        if (refs.drownTimer.current > DROWN_DELAY) { 
-            callbacks.takeDamage(DROWN_DAMAGE * deltaTime); 
-            if (Math.random() < 0.1) callbacks.onStatusUpdate("Drowning!"); 
+        if (refs.drownTimer.current > DROWN_DELAY) {
+            callbacks.takeDamage(DROWN_DAMAGE * deltaTime);
+            if (Math.random() < 0.1) callbacks.onStatusUpdate("Drowning!");
         }
     } else { refs.drownTimer.current = 0; }
 
@@ -212,7 +212,7 @@ export const updateGame = (
             callbacks.takeDamage(BUSH_DAMAGE * deltaTime);
         }
     }
-    
+
     // Cactus Damage (Solid block, so check proximity instead of "under")
     const checkCactusDamage = () => {
         const px = Math.floor(player.x);
@@ -232,31 +232,31 @@ export const updateGame = (
     checkCactusDamage();
 
     if (player.poisonTimer > 0) {
-        player.poisonTimer -= deltaTime; 
+        player.poisonTimer -= deltaTime;
         refs.poisonTick.current += deltaTime;
-        if (refs.poisonTick.current >= 1.0) { 
-            callbacks.takeDamage(POISON_CONFIG.damagePerSecond); 
-            callbacks.spawnParticles(player.x, player.y, '#a855f7', 4, 3); 
-            refs.poisonTick.current = 0; 
+        if (refs.poisonTick.current >= 1.0) {
+            callbacks.takeDamage(POISON_CONFIG.damagePerSecond);
+            callbacks.spawnParticles(player.x, player.y, '#a855f7', 4, 3);
+            refs.poisonTick.current = 0;
         }
     }
 
     if (isMoving) {
-        const length = Math.sqrt(dx*dx + dy*dy); 
+        const length = Math.sqrt(dx * dx + dy * dy);
         dx /= length; dy /= length;
-        const nextX = player.x + dx * speed * deltaTime; 
+        const nextX = player.x + dx * speed * deltaTime;
         const nextY = player.y + dy * speed * deltaTime;
         if (!checkCollision(world, nextX, player.y)) player.x = nextX;
         if (!checkCollision(world, player.x, nextY)) player.y = nextY;
     }
 
     // --- Boat Physics ---
-    for(let dy=-rY; dy<=rY; dy++) {
-        for(let dx=-rX; dx<=rX; dx++) {
-            const key = getChunkKey(cx+dx, cy+dy);
+    for (let dy = -rY; dy <= rY; dy++) {
+        for (let dx = -rX; dx <= rX; dx++) {
+            const key = getChunkKey(cx + dx, cy + dy);
             const chunk = world.chunks[key];
-            if(chunk) {
-                for(const ent of chunk.entities) {
+            if (chunk) {
+                for (const ent of chunk.entities) {
                     if (ent.type === EntityType.BOAT) {
                         if (ent.vx === undefined) ent.vx = 0; if (ent.vy === undefined) ent.vy = 0;
                         if (ent.id === refs.driving.current && !isInventoryOpen) {
@@ -266,7 +266,7 @@ export const updateGame = (
                             if (keys[settings.keybinds.moveLeft]) ax -= 1;
                             if (keys[settings.keybinds.moveRight]) ax += 1;
                             if (ax !== 0 || ay !== 0) {
-                                const len = Math.sqrt(ax*ax + ay*ay); ax /= len; ay /= len;
+                                const len = Math.sqrt(ax * ax + ay * ay); ax /= len; ay /= len;
                                 ent.vx += ax * BOAT_STATS.acceleration * deltaTime; ent.vy += ay * BOAT_STATS.acceleration * deltaTime;
                             }
                         }
@@ -286,8 +286,8 @@ export const updateGame = (
 
     // --- Interactions (Breaking/Placing/Fishing) ---
     if (!isInventoryOpen) {
-        const targetX = ((mouse.x - (screenW/2)) / zoom + (screenW/2) + camX) / TILE_SIZE;
-        const targetY = ((mouse.y - (screenH/2)) / zoom + (screenH/2) + camY) / TILE_SIZE;
+        const targetX = ((mouse.x - (screenW / 2)) / zoom + (screenW / 2) + camX) / TILE_SIZE;
+        const targetY = ((mouse.y - (screenH / 2)) / zoom + (screenH / 2) + camY) / TILE_SIZE;
 
         if (mouse.leftDown) {
             handleBreaking(deltaTime, targetX, targetY, world, player, refs, callbacks);
@@ -316,19 +316,19 @@ export const updateGame = (
             callbacks.spawnDroppedItem(player.x, player.y, { type: catchType, count: 1 });
             callbacks.spawnParticles(fx, fy, '#60a5fa', 10, 3);
             callbacks.onStatusUpdate(`Caught a ${ITEM_NAMES[catchType]}!`);
-            
+
             // Rod Durability
             const selectedItem = player.inventory[player.selectedItemIndex];
             if (selectedItem && selectedItem.type === ItemType.FISHING_ROD) {
-                 const newInv = [...player.inventory];
-                 const newItem = { ...selectedItem, durability: (selectedItem.durability || 1) - 1 };
-                 if (newItem.durability <= 0) { 
-                     newInv[player.selectedItemIndex] = null; 
-                     callbacks.onStatusUpdate(`Fishing Rod broke!`); 
-                 } else {
-                     newInv[player.selectedItemIndex] = newItem;
-                 }
-                 callbacks.onInventoryUpdate(newInv);
+                const newInv = [...player.inventory];
+                const newItem = { ...selectedItem, durability: (selectedItem.durability || 1) - 1 };
+                if (newItem.durability <= 0) {
+                    newInv[player.selectedItemIndex] = null;
+                    callbacks.onStatusUpdate(`Fishing Rod broke!`);
+                } else {
+                    newInv[player.selectedItemIndex] = newItem;
+                }
+                callbacks.onInventoryUpdate(newInv);
             }
             refs.fishing.current = null;
         }
@@ -385,7 +385,7 @@ export const updateGame = (
 const handleBreaking = (dt: number, targetX: number, targetY: number, world: World, player: Player, refs: any, callbacks: UpdateCallbacks) => {
     const tileX = Math.floor(targetX);
     const tileY = Math.floor(targetY);
-    
+
     // Reach Calculation
     const baseReach = 3.0;
     const reachBonus = player.equipment.accessory?.type === ItemType.CHARM ? CHARM_CONFIG.reachBonus : 0;
@@ -406,7 +406,7 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
         // Determine ammo
         let ammoIdx = -1;
         let ammoType: ItemType | null = null;
-        
+
         if (isBow) {
             // Check for Poison Arrows first (as an upgrade/variant)
             // Or prioritize normal arrow? Logic: Check what we have.
@@ -421,14 +421,14 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
                 ammoIdx = arrowIdx;
                 ammoType = ItemType.ARROW;
             } else {
-                 if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("No Arrows!");
-                 refs.breaking.current = null;
-                 return;
+                if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("No Arrows!");
+                refs.breaking.current = null;
+                return;
             }
         } else {
-             // For snowball, the item itself is ammo
-             ammoIdx = player.selectedItemIndex;
-             ammoType = ItemType.SNOWBALL;
+            // For snowball, the item itself is ammo
+            ammoIdx = player.selectedItemIndex;
+            ammoType = ItemType.SNOWBALL;
         }
 
         // Consume Ammo
@@ -443,26 +443,26 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
             const { cx, cy } = getChunkCoords(player.x, player.y);
             const key = getChunkKey(cx, cy);
             if (world.chunks[key]) {
-                 const angle = Math.atan2(targetY - player.y, targetX - player.x);
-                 let entityType = EntityType.SNOWBALL;
-                 if (ammoType === ItemType.ARROW) entityType = EntityType.ARROW;
-                 if (ammoType === ItemType.POISON_ARROW) entityType = EntityType.POISON_ARROW;
+                const angle = Math.atan2(targetY - player.y, targetX - player.x);
+                let entityType = EntityType.SNOWBALL;
+                if (ammoType === ItemType.ARROW) entityType = EntityType.ARROW;
+                if (ammoType === ItemType.POISON_ARROW) entityType = EntityType.POISON_ARROW;
 
-                 const stats = entityType === EntityType.SNOWBALL ? SNOWBALL_STATS : 
-                               entityType === EntityType.POISON_ARROW ? POISON_ARROW_STATS : ARROW_STATS;
-                 
-                 world.chunks[key].entities.push({
-                     id: `proj-${Date.now()}-${Math.random()}`,
-                     type: entityType,
-                     x: player.x,
-                     y: player.y,
-                     vx: Math.cos(angle) * stats.speed,
-                     vy: Math.sin(angle) * stats.speed,
-                     rotation: angle,
-                     health: 1, maxHealth: 1, 
-                     state: 'idle', stateTimer: 0, facing: 'right', drownTimer: 0
-                 });
-                 callbacks.spawnParticles(player.x + Math.cos(angle), player.y + Math.sin(angle), isBow ? '#E5E7EB' : '#F8FAFC', 3, 1);
+                const stats = entityType === EntityType.SNOWBALL ? SNOWBALL_STATS :
+                    entityType === EntityType.POISON_ARROW ? POISON_ARROW_STATS : ARROW_STATS;
+
+                world.chunks[key].entities.push({
+                    id: `proj-${Date.now()}-${Math.random()}`,
+                    type: entityType,
+                    x: player.x,
+                    y: player.y,
+                    vx: Math.cos(angle) * stats.speed,
+                    vy: Math.sin(angle) * stats.speed,
+                    rotation: angle,
+                    health: 1, maxHealth: 1,
+                    state: 'idle', stateTimer: 0, facing: 'right', drownTimer: 0
+                });
+                callbacks.spawnParticles(player.x + Math.cos(angle), player.y + Math.sin(angle), isBow ? '#E5E7EB' : '#F8FAFC', 3, 1);
             }
         }
         return; // Don't do other breaking if shooting
@@ -471,45 +471,45 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
 
     // Check entities interaction (Melee)
     const { cx, cy } = getChunkCoords(player.x, player.y);
-    for(let dy=-1; dy<=1; dy++) {
-        for(let dx=-1; dx<=1; dx++) {
-            const key = getChunkKey(cx+dx, cy+dy);
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            const key = getChunkKey(cx + dx, cy + dy);
             const chunk = world.chunks[key];
-            if(chunk) {
-                for(let i=chunk.entities.length-1; i>=0; i--) {
+            if (chunk) {
+                for (let i = chunk.entities.length - 1; i >= 0; i--) {
                     const ent = chunk.entities[i];
                     if (ent.id === refs.driving.current) continue;
-                    if (ent.type === EntityType.ARROW || ent.type === EntityType.POISON_ARROW || ent.type === EntityType.SNOWBALL) continue; 
-                    
+                    if (ent.type === EntityType.ARROW || ent.type === EntityType.POISON_ARROW || ent.type === EntityType.SNOWBALL) continue;
+
                     // Apply expanded reach
                     if (dist(ent.x, ent.y, targetX, targetY) < 0.8 && dist(player.x, player.y, ent.x, ent.y) < maxReach) {
                         const now = Date.now();
                         if (now - refs.attackCooldown.current < 400) return;
                         refs.attackCooldown.current = now;
-                        
+
                         let damage = 3;
                         if (selectedItem && TOOL_CONFIG[selectedItem.type as keyof typeof TOOL_CONFIG]) {
                             const toolConf = TOOL_CONFIG[selectedItem.type as keyof typeof TOOL_CONFIG];
                             if (toolConf.attackDamage) damage = toolConf.attackDamage;
                         }
-                        
+
                         ent.health -= damage;
-                        if (ent.type === EntityType.COW || ent.type === EntityType.RABBIT) { ent.state = 'flee'; ent.stateTimer = 2.0; } 
+                        if (ent.type === EntityType.COW || ent.type === EntityType.RABBIT) { ent.state = 'flee'; ent.stateTimer = 2.0; }
                         else if (ent.type === EntityType.SNAKE || ent.type === EntityType.POISON_SNAKE || ent.type === EntityType.SCORPION || ent.type === EntityType.SPIDER || ent.type === EntityType.POISON_SPIDER) { ent.state = 'chase'; ent.stateTimer = 5.0; }
-                        
+
                         callbacks.spawnParticles(ent.x, ent.y, ent.type === EntityType.BOAT ? '#854d0e' : '#ef4444', 2, 2);
-                        
+
                         // Universal Durability Loss on Hit
                         if (selectedItem && selectedItem.durability !== undefined) {
-                             const newInv = [...player.inventory];
-                             const newItem = { ...selectedItem, durability: selectedItem.durability - 1 };
-                             if (newItem.durability <= 0) { 
-                                 newInv[player.selectedItemIndex] = null; 
-                                 callbacks.onStatusUpdate(`${ITEM_NAMES[selectedItem.type]} broke!`); 
-                             } else {
-                                 newInv[player.selectedItemIndex] = newItem;
-                             }
-                             callbacks.onInventoryUpdate(newInv);
+                            const newInv = [...player.inventory];
+                            const newItem = { ...selectedItem, durability: selectedItem.durability - 1 };
+                            if (newItem.durability <= 0) {
+                                newInv[player.selectedItemIndex] = null;
+                                callbacks.onStatusUpdate(`${ITEM_NAMES[selectedItem.type]} broke!`);
+                            } else {
+                                newInv[player.selectedItemIndex] = newItem;
+                            }
+                            callbacks.onInventoryUpdate(newInv);
                         }
 
                         if (ent.health <= 0) {
@@ -542,7 +542,7 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
     if (tileType === null) return;
 
     let targetType: number | null = null;
-    if (objectType !== undefined) targetType = objectType; 
+    if (objectType !== undefined) targetType = objectType;
     else if (INTERACTABLE_TILES.includes(tileType)) targetType = tileType;
 
     if (targetType !== null) {
@@ -552,118 +552,125 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
         const isSword = selectedItem && (selectedItem.type.includes('SWORD'));
         const isHardObject = [TileType.WALL_WOOD, TileType.WALL_STONE, TileType.CRAFTING_STATION, TileType.CHEST, TileType.GOLD_ORE].includes(targetType);
 
+        let isWrongTool = false;
         if (isHardObject) {
-             let validTool = false;
-             if (targetType === TileType.WALL_STONE && isPick) validTool = true;
-             if ((targetType === TileType.WALL_WOOD || targetType === TileType.CRAFTING_STATION || targetType === TileType.CHEST || targetType === TileType.FLOOR_WOOD) && isAxe) validTool = true;
-             
-             // Gold Ore Requirement: Iron Pickaxe or better (Including Gold Pickaxe if available)
-             if (targetType === TileType.GOLD_ORE) {
-                 if (selectedItem && (selectedItem.type === ItemType.IRON_PICKAXE || selectedItem.type === ItemType.GOLD_PICKAXE)) {
-                     validTool = true;
-                 } else {
-                     if (refs.breaking.current === null) callbacks.onStatusUpdate("Need an Iron Pickaxe!");
-                     refs.breaking.current = null;
-                     return;
-                 }
-             }
+            let validTool = false;
+            if (targetType === TileType.WALL_STONE && isPick) validTool = true;
+            if ((targetType === TileType.WALL_WOOD || targetType === TileType.CRAFTING_STATION || targetType === TileType.CHEST || targetType === TileType.FLOOR_WOOD) && isAxe) validTool = true;
 
-             if (!validTool && targetType !== TileType.GOLD_ORE) {
-                 if (refs.breaking.current === null) callbacks.onStatusUpdate("Need the correct tool!");
-                 refs.breaking.current = null;
-                 return;
-             }
+            // Gold Ore Requirement: Iron Pickaxe or better (Including Gold Pickaxe if available)
+            if (targetType === TileType.GOLD_ORE) {
+                if (selectedItem && (selectedItem.type === ItemType.IRON_PICKAXE || selectedItem.type === ItemType.GOLD_PICKAXE)) {
+                    validTool = true;
+                }
+            }
+
+            if (!validTool) {
+                isWrongTool = true;
+                if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("Wrong tool! This will be slow...");
+            }
         }
 
         if (!refs.breaking.current || refs.breaking.current.x !== tileX || refs.breaking.current.y !== tileY) {
             const requiredTime = BREAK_TIMES[targetType] || 1.0;
             let speedMultiplier = 1.0;
             // Tool speed logic...
-             if (selectedItem) {
-                 if (targetType === TileType.TREE || targetType === TileType.PINE_TREE || targetType === TileType.CACTUS || targetType === TileType.WALL_WOOD || targetType === TileType.FLOOR_WOOD) {
-                     if (selectedItem.type === ItemType.WOOD_AXE) speedMultiplier = 1.5;
-                     if (selectedItem.type === ItemType.STONE_AXE) speedMultiplier = 2.0;
-                     if (selectedItem.type === ItemType.IRON_AXE) speedMultiplier = 3.0;
-                     if (selectedItem.type === ItemType.GOLD_AXE) speedMultiplier = 4.0;
-                 }
-                 if (targetType === TileType.ROCK || targetType === TileType.IRON_ORE || targetType === TileType.GOLD_ORE || targetType === TileType.WALL_STONE || targetType === TileType.FLOOR_STONE) {
-                     if (selectedItem.type === ItemType.WOOD_PICKAXE) speedMultiplier = 1.5;
-                     if (selectedItem.type === ItemType.STONE_PICKAXE) speedMultiplier = 2.0;
-                     if (selectedItem.type === ItemType.IRON_PICKAXE) speedMultiplier = 3.0;
-                     if (selectedItem.type === ItemType.GOLD_PICKAXE) speedMultiplier = 4.0;
-                 }
-                 if (targetType === TileType.COBWEB && isSword) speedMultiplier = 5.0; 
-                 if ((targetType === TileType.SNOW_PILE || targetType === TileType.SNOW_BLOCK)) speedMultiplier = 5.0; // Snow is easy to break
+            if (selectedItem) {
+                if (targetType === TileType.TREE || targetType === TileType.PINE_TREE || targetType === TileType.CACTUS || targetType === TileType.WALL_WOOD || targetType === TileType.FLOOR_WOOD) {
+                    if (selectedItem.type === ItemType.WOOD_AXE) speedMultiplier = 1.5;
+                    if (selectedItem.type === ItemType.STONE_AXE) speedMultiplier = 2.0;
+                    if (selectedItem.type === ItemType.IRON_AXE) speedMultiplier = 3.0;
+                    if (selectedItem.type === ItemType.GOLD_AXE) speedMultiplier = 4.0;
+                }
+                if (targetType === TileType.ROCK || targetType === TileType.IRON_ORE || targetType === TileType.GOLD_ORE || targetType === TileType.WALL_STONE || targetType === TileType.FLOOR_STONE) {
+                    if (selectedItem.type === ItemType.WOOD_PICKAXE) speedMultiplier = 1.5;
+                    if (selectedItem.type === ItemType.STONE_PICKAXE) speedMultiplier = 2.0;
+                    if (selectedItem.type === ItemType.IRON_PICKAXE) speedMultiplier = 3.0;
+                    if (selectedItem.type === ItemType.GOLD_PICKAXE) speedMultiplier = 4.0;
+                }
+                if (targetType === TileType.COBWEB && isSword) speedMultiplier = 5.0;
+                if ((targetType === TileType.SNOW_PILE || targetType === TileType.SNOW_BLOCK)) speedMultiplier = 5.0; // Snow is easy to break
             }
+
+            if (isWrongTool) {
+                speedMultiplier *= 0.1; // 10x slower
+            }
+
             refs.breaking.current = { x: tileX, y: tileY, timer: 0, maxTime: requiredTime / speedMultiplier };
         }
 
         refs.breaking.current.timer += dt;
         if (Math.random() < 0.1) callbacks.spawnParticles(targetX, targetY, COLORS[targetType] || '#fff', 1, 2);
-        
+
         if (refs.breaking.current.timer >= refs.breaking.current.maxTime) {
             // Finish Breaking Logic
             const drops: { type: ItemType, count: number }[] = [];
-            
+
             // Calculate Yield Bonus from Tool
             const yieldBonus = (selectedItem && TOOL_CONFIG[selectedItem.type]) ? TOOL_CONFIG[selectedItem.type].yieldBonus : 1;
 
             // --- DROPS LOGIC ---
-            if (targetType === TileType.TREE) { 
-                drops.push({ type: ItemType.WOOD, count: 1 * yieldBonus }); 
-                drops.push({ type: ItemType.SAPLING, count: Math.floor(Math.random() * 3) + 1 });
+            // If wrong tool on hard objects, no drops (except maybe wood walls?)
+            // Let's be strict: Wrong tool = No drop for "Hard" objects defined earlier
+            if (isWrongTool) {
+                callbacks.onStatusUpdate("Broken (No Drop)");
+            } else {
+                if (targetType === TileType.TREE) {
+                    drops.push({ type: ItemType.WOOD, count: 1 * yieldBonus });
+                    drops.push({ type: ItemType.SAPLING, count: Math.floor(Math.random() * 3) + 1 });
+                }
+                else if (targetType === TileType.PINE_TREE) {
+                    drops.push({ type: ItemType.WOOD, count: 1 * yieldBonus });
+                    drops.push({ type: ItemType.PINE_SAPLING, count: Math.floor(Math.random() * 3) + 1 });
+                }
+                else if (targetType === TileType.ROCK) drops.push({ type: ItemType.STONE, count: 1 * yieldBonus });
+                else if (targetType === TileType.IRON_ORE) drops.push({ type: ItemType.IRON, count: 1 * yieldBonus });
+                else if (targetType === TileType.GOLD_ORE) drops.push({ type: ItemType.GOLD, count: 1 * yieldBonus });
+                else if (targetType === TileType.BUSH) drops.push({ type: ItemType.BERRY, count: 1 });
+                else if (targetType === TileType.CLAM) drops.push({ type: ItemType.CLAM, count: 1 });
+                else if (targetType === TileType.TALL_GRASS) {
+                    if (Math.random() < 0.2) drops.push({ type: ItemType.PLANT_FIBER, count: 1 });
+                }
+                else if (targetType === TileType.SAPLING) drops.push({ type: ItemType.SAPLING, count: 1 });
+                else if (targetType === TileType.PINE_SAPLING) drops.push({ type: ItemType.PINE_SAPLING, count: 1 });
+                else if (targetType === TileType.BUSH_SAPLING) drops.push({ type: ItemType.BERRY_SEED, count: 1 });
+                else if (targetType === TileType.WHEAT_PLANT) drops.push({ type: ItemType.WHEAT, count: 1 }, { type: ItemType.WHEAT_SEEDS, count: Math.floor(Math.random() * 2) + 1 });
+                else if (targetType === TileType.COBWEB) {
+                    if (isSword) drops.push({ type: ItemType.COBWEB, count: 1 });
+                }
+                else if (targetType === TileType.SNOW_PILE || targetType === TileType.SNOW_BLOCK) {
+                    drops.push({ type: ItemType.SNOWBALL, count: Math.floor(Math.random() * 3) + 1 });
+                }
+                else if (targetType === TileType.CHEST) {
+                    drops.push({ type: ItemType.CHEST_ITEM, count: 1 });
+                    const contents = getContainerAt(world, tileX, tileY);
+                    if (contents) { contents.forEach(item => { if (item) drops.push(item); }); removeContainerAt(world, tileX, tileY); }
+                }
+                else if (targetType === TileType.WALL_WOOD) drops.push({ type: ItemType.WALL_WOOD_ITEM, count: 1 });
+                else if (targetType === TileType.WALL_STONE) drops.push({ type: ItemType.WALL_STONE_ITEM, count: 1 });
+                else if (targetType === TileType.CRAFTING_STATION) drops.push({ type: ItemType.CRAFTING_STATION_ITEM, count: 1 });
+                else if (targetType === TileType.FLOOR_WOOD) drops.push({ type: ItemType.FLOOR_WOOD_ITEM, count: 1 });
+                else if (targetType === TileType.FLOOR_STONE) drops.push({ type: ItemType.FLOOR_STONE_ITEM, count: 1 });
+                else if (targetType === TileType.CACTUS) drops.push({ type: ItemType.CACTUS, count: 1 });
             }
-            else if (targetType === TileType.PINE_TREE) {
-                drops.push({ type: ItemType.WOOD, count: 1 * yieldBonus }); 
-                drops.push({ type: ItemType.PINE_SAPLING, count: Math.floor(Math.random() * 3) + 1 });
-            }
-            else if (targetType === TileType.ROCK) drops.push({ type: ItemType.STONE, count: 1 * yieldBonus });
-            else if (targetType === TileType.IRON_ORE) drops.push({ type: ItemType.IRON, count: 1 * yieldBonus });
-            else if (targetType === TileType.GOLD_ORE) drops.push({ type: ItemType.GOLD, count: 1 * yieldBonus });
-            else if (targetType === TileType.BUSH) drops.push({ type: ItemType.BERRY, count: 1 });
-            else if (targetType === TileType.CLAM) drops.push({ type: ItemType.CLAM, count: 1 });
-            else if (targetType === TileType.TALL_GRASS) { 
-                if (Math.random() < 0.2) drops.push({ type: ItemType.PLANT_FIBER, count: 1 }); 
-            }
-            else if (targetType === TileType.SAPLING) drops.push({ type: ItemType.SAPLING, count: 1 });
-            else if (targetType === TileType.PINE_SAPLING) drops.push({ type: ItemType.PINE_SAPLING, count: 1 });
-            else if (targetType === TileType.BUSH_SAPLING) drops.push({ type: ItemType.BERRY_SEED, count: 1 });
-            else if (targetType === TileType.WHEAT_PLANT) drops.push({ type: ItemType.WHEAT, count: 1 }, { type: ItemType.WHEAT_SEEDS, count: Math.floor(Math.random()*2)+1 });
-            else if (targetType === TileType.COBWEB) {
-                if (isSword) drops.push({ type: ItemType.COBWEB, count: 1 });
-            }
-            else if (targetType === TileType.SNOW_PILE || targetType === TileType.SNOW_BLOCK) {
-                 drops.push({ type: ItemType.SNOWBALL, count: Math.floor(Math.random()*3) + 1 });
-            }
-            else if (targetType === TileType.CHEST) {
-                drops.push({ type: ItemType.CHEST_ITEM, count: 1 });
-                const contents = getContainerAt(world, tileX, tileY);
-                if (contents) { contents.forEach(item => { if (item) drops.push(item); }); removeContainerAt(world, tileX, tileY); }
-            }
-            else if (targetType === TileType.WALL_WOOD) drops.push({ type: ItemType.WALL_WOOD_ITEM, count: 1 }); 
-            else if (targetType === TileType.WALL_STONE) drops.push({ type: ItemType.WALL_STONE_ITEM, count: 1 });
-            else if (targetType === TileType.CRAFTING_STATION) drops.push({ type: ItemType.CRAFTING_STATION_ITEM, count: 1 });
-            else if (targetType === TileType.FLOOR_WOOD) drops.push({ type: ItemType.FLOOR_WOOD_ITEM, count: 1 });
-            else if (targetType === TileType.FLOOR_STONE) drops.push({ type: ItemType.FLOOR_STONE_ITEM, count: 1 });
-            else if (targetType === TileType.CACTUS) drops.push({ type: ItemType.CACTUS, count: 1 });
 
             // Reduce durability on break
             if (selectedItem && selectedItem.durability !== undefined) {
-                 const newInv = [...player.inventory];
-                 const newItem = { ...selectedItem, durability: selectedItem.durability - 1 };
-                 if (newItem.durability <= 0) { 
-                     newInv[player.selectedItemIndex] = null; 
-                     callbacks.onStatusUpdate(`${ITEM_NAMES[selectedItem.type]} broke!`); 
-                 } else {
-                     newInv[player.selectedItemIndex] = newItem;
-                 }
-                 callbacks.onInventoryUpdate(newInv);
+                const newInv = [...player.inventory];
+                const newItem = { ...selectedItem, durability: selectedItem.durability - 1 };
+                if (newItem.durability <= 0) {
+                    newInv[player.selectedItemIndex] = null;
+                    callbacks.onStatusUpdate(`${ITEM_NAMES[selectedItem.type]} broke!`);
+                } else {
+                    newInv[player.selectedItemIndex] = newItem;
+                }
+                callbacks.onInventoryUpdate(newInv);
             }
 
             for (const drop of drops) {
                 callbacks.spawnDroppedItem(tileX + 0.5, tileY + 0.5, drop, 0.2);
             }
-            
+
             const hasObject = getObjectAt(world, tileX, tileY) !== undefined;
             if (hasObject) {
                 removeObjectAt(world, tileX, tileY);
@@ -685,27 +692,27 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
 const handlePlacing = (targetX: number, targetY: number, world: World, player: Player, refs: any, callbacks: UpdateCallbacks) => {
     const tileX = Math.floor(targetX);
     const tileY = Math.floor(targetY);
-    
+
     // Reach Calculation
     const baseReach = 3.0;
     const reachBonus = player.equipment.accessory?.type === ItemType.CHARM ? CHARM_CONFIG.reachBonus : 0;
     const maxReach = baseReach + reachBonus;
 
     if (dist(player.x, player.y, targetX, targetY) > maxReach) return false;
-    
+
     // Check boat entry
     const { cx, cy } = getChunkCoords(targetX, targetY);
-    for(let dy=-1; dy<=1; dy++) {
-        for(let dx=-1; dx<=1; dx++) {
-            const key = getChunkKey(cx+dx, cy+dy);
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            const key = getChunkKey(cx + dx, cy + dy);
             const chunk = world.chunks[key];
-            if(chunk) {
-                for(const ent of chunk.entities) {
+            if (chunk) {
+                for (const ent of chunk.entities) {
                     if (ent.type === EntityType.BOAT && dist(ent.x, ent.y, targetX, targetY) < 1.0) {
                         refs.driving.current = ent.id;
                         player.x = ent.x; player.y = ent.y;
                         callbacks.onStatusUpdate("Driving Boat");
-                        return true; 
+                        return true;
                     }
                 }
             }
@@ -722,11 +729,11 @@ const handlePlacing = (targetX: number, targetY: number, world: World, player: P
     if (selectedItem.type === ItemType.FISHING_ROD && tileType === TileType.WATER) {
         if (!refs.fishing.current) {
             refs.fishing.current = { x: tileX, y: tileY, timer: 0 };
-            callbacks.spawnParticles(tileX+0.5, tileY+0.5, '#60a5fa', 5, 2);
+            callbacks.spawnParticles(tileX + 0.5, tileY + 0.5, '#60a5fa', 5, 2);
             return true;
         }
     }
-    
+
     // Placement logic
     let success = false;
     let particleColor = '#fff';
@@ -757,22 +764,22 @@ const handlePlacing = (targetX: number, targetY: number, world: World, player: P
             if (selectedItem.type === ItemType.WALL_STONE_ITEM) newObjType = TileType.WALL_STONE;
             if (selectedItem.type === ItemType.CRAFTING_STATION_ITEM) newObjType = TileType.CRAFTING_STATION;
             if (selectedItem.type === ItemType.CHEST_ITEM) { newObjType = TileType.CHEST; setContainerAt(world, tileX, tileY, Array(CONTAINER_SIZE).fill(null)); }
-            
-            if (selectedItem.type === ItemType.SAPLING && canPlantSapling) { 
-                newObjType = TileType.SAPLING; 
-                refs.saplings.current.push({ x: tileX, y: tileY, plantTime: Date.now() }); 
+
+            if (selectedItem.type === ItemType.SAPLING && canPlantSapling) {
+                newObjType = TileType.SAPLING;
+                refs.saplings.current.push({ x: tileX, y: tileY, plantTime: Date.now() });
             }
-            if (selectedItem.type === ItemType.PINE_SAPLING && canPlantSapling) { 
-                newObjType = TileType.PINE_SAPLING; 
-                refs.saplings.current.push({ x: tileX, y: tileY, plantTime: Date.now(), isPine: true }); 
+            if (selectedItem.type === ItemType.PINE_SAPLING && canPlantSapling) {
+                newObjType = TileType.PINE_SAPLING;
+                refs.saplings.current.push({ x: tileX, y: tileY, plantTime: Date.now(), isPine: true });
             }
-            
+
             if (selectedItem.type === ItemType.CACTUS && tileType === TileType.SAND) newObjType = TileType.CACTUS;
             if (selectedItem.type === ItemType.WHEAT_SEEDS && tileType === TileType.GRASS) { newObjType = TileType.WHEAT_CROP; refs.saplings.current.push({ x: tileX, y: tileY, plantTime: Date.now(), isWheat: true }); }
             if (selectedItem.type === ItemType.BERRY_SEED && (tileType === TileType.GRASS || tileType === TileType.SNOW)) { newObjType = TileType.BUSH_SAPLING; refs.saplings.current.push({ x: tileX, y: tileY, plantTime: Date.now() }); }
             if (selectedItem.type === ItemType.COBWEB) { newObjType = TileType.COBWEB; }
             if (selectedItem.type === ItemType.SNOW_BLOCK) { newObjType = TileType.SNOW_BLOCK; }
-            
+
             if (newObjType) {
                 setObjectAt(world, tileX, tileY, newObjType);
                 success = true;
@@ -806,7 +813,7 @@ const processEntityBehavior = (ent: Entity, player: Player, world: World, dt: nu
     const distToPlayer = dist(ent.x, ent.y, player.x, player.y);
     const isAggressive = [EntityType.SNAKE, EntityType.POISON_SNAKE, EntityType.SCORPION, EntityType.SPIDER, EntityType.POISON_SPIDER].includes(ent.type);
     const detectionRange = isAggressive ? 6.0 : 4.0;
-    
+
     // Define preferred biomes for "Home Seeking" behavior
     let preferredTile: TileType | null = null;
     if (ent.type === EntityType.COW || ent.type === EntityType.SNAKE || ent.type === EntityType.POISON_SNAKE) preferredTile = TileType.GRASS;
@@ -818,7 +825,7 @@ const processEntityBehavior = (ent: Entity, player: Player, world: World, dt: nu
         if (ent.stateTimer <= 0) {
             ent.state = 'wander';
             ent.stateTimer = Math.random() * 3 + 1;
-            
+
             // Leashing Logic: If not on preferred tile, bias target towards it
             let forceBiomeSeek = false;
             if (preferredTile !== null) {
@@ -831,31 +838,31 @@ const processEntityBehavior = (ent: Entity, player: Player, world: World, dt: nu
             // Attempt to find a valid target
             let found = false;
             // Search attempts
-            for(let i=0; i<5; i++) {
+            for (let i = 0; i < 5; i++) {
                 const range = forceBiomeSeek ? 10 : 6;
                 const potentialX = ent.x + (Math.random() - 0.5) * range;
                 const potentialY = ent.y + (Math.random() - 0.5) * range;
                 const tile = getTileAt(world, Math.floor(potentialX), Math.floor(potentialY));
-                
+
                 // If seeking biome, only accept preferred tile. Otherwise accept any compatible.
                 let valid = isTileCompatible(ent.type, tile);
                 if (forceBiomeSeek && tile !== preferredTile) valid = false;
-                
+
                 if (valid) {
-                     ent.targetX = potentialX;
-                     ent.targetY = potentialY;
-                     found = true;
-                     break;
+                    ent.targetX = potentialX;
+                    ent.targetY = potentialY;
+                    found = true;
+                    break;
                 }
             }
-            
+
             if (!found && forceBiomeSeek) {
                 // If can't find biome nearby, just wander randomly to try to get out
                 ent.targetX = ent.x + (Math.random() - 0.5) * 8;
                 ent.targetY = ent.y + (Math.random() - 0.5) * 8;
             } else if (!found) {
-                 ent.state = 'idle';
-                 ent.stateTimer = 1.0; 
+                ent.state = 'idle';
+                ent.stateTimer = 1.0;
             }
         }
         if (isAggressive && distToPlayer < detectionRange && !refs.driving.current) {
@@ -881,20 +888,20 @@ const processEntityBehavior = (ent: Entity, player: Player, world: World, dt: nu
         // Attack logic
         // Use a slightly larger range (0.8) to ensure attacks feel responsive
         if (distToPlayer < 0.8) {
-             const now = Date.now();
-             if (!ent.attackCooldown || now - ent.attackCooldown > 1000) {
-                 const dmg = ent.type === EntityType.POISON_SPIDER ? POISON_SPIDER_STATS.damage : 
-                             ent.type === EntityType.SNAKE || ent.type === EntityType.POISON_SNAKE ? SNAKE_STATS.damage :
-                             ent.type === EntityType.SCORPION ? SCORPION_STATS.damage : 5;
-                 callbacks.takeDamage(dmg);
-                 ent.attackCooldown = now;
-                 
-                 // Apply Poison (Fixed: Scorpions also poison now, and it is 100% chance)
-                 if (ent.type === EntityType.POISON_SPIDER || ent.type === EntityType.SCORPION || ent.type === EntityType.POISON_SNAKE) {
-                     player.poisonTimer = POISON_CONFIG.duration;
-                     callbacks.onStatusUpdate("You are poisoned!");
-                 }
-             }
+            const now = Date.now();
+            if (!ent.attackCooldown || now - ent.attackCooldown > 1000) {
+                const dmg = ent.type === EntityType.POISON_SPIDER ? POISON_SPIDER_STATS.damage :
+                    ent.type === EntityType.SNAKE || ent.type === EntityType.POISON_SNAKE ? SNAKE_STATS.damage :
+                        ent.type === EntityType.SCORPION ? SCORPION_STATS.damage : 5;
+                callbacks.takeDamage(dmg);
+                ent.attackCooldown = now;
+
+                // Apply Poison (Fixed: Scorpions also poison now, and it is 100% chance)
+                if (ent.type === EntityType.POISON_SPIDER || ent.type === EntityType.SCORPION || ent.type === EntityType.POISON_SNAKE) {
+                    player.poisonTimer = POISON_CONFIG.duration;
+                    callbacks.onStatusUpdate("You are poisoned!");
+                }
+            }
         }
     } else if (ent.state === 'flee') {
         if (ent.stateTimer <= 0) {
@@ -903,10 +910,10 @@ const processEntityBehavior = (ent: Entity, player: Player, world: World, dt: nu
         // Run away from player
         const dx = ent.x - player.x;
         const dy = ent.y - player.y;
-        const len = Math.sqrt(dx*dx + dy*dy);
+        const len = Math.sqrt(dx * dx + dy * dy);
         if (len > 0) {
-            ent.targetX = ent.x + (dx/len) * 5;
-            ent.targetY = ent.y + (dy/len) * 5;
+            ent.targetX = ent.x + (dx / len) * 5;
+            ent.targetY = ent.y + (dy / len) * 5;
         }
     }
 
@@ -917,34 +924,34 @@ const processEntityBehavior = (ent: Entity, player: Player, world: World, dt: nu
     else if (ent.type === EntityType.SNAKE || ent.type === EntityType.POISON_SNAKE) moveSpeed = SNAKE_STATS.speed;
     else if (ent.type === EntityType.SCORPION) moveSpeed = SCORPION_STATS.speed;
     else if (ent.type.includes('SPIDER')) moveSpeed = SPIDER_STATS.speed;
-    
+
     if (ent.state === 'idle') moveSpeed = 0;
 
     // Apply knockback sliding if any velocity exists (from projectiles)
     if (ent.vx || ent.vy) {
-         ent.vx = (ent.vx || 0) * 0.9; // Friction
-         ent.vy = (ent.vy || 0) * 0.9;
-         if (Math.abs(ent.vx) < 0.1) ent.vx = 0;
-         if (Math.abs(ent.vy) < 0.1) ent.vy = 0;
-         
-         ent.x += ent.vx * dt;
-         ent.y += ent.vy * dt;
+        ent.vx = (ent.vx || 0) * 0.9; // Friction
+        ent.vy = (ent.vy || 0) * 0.9;
+        if (Math.abs(ent.vx) < 0.1) ent.vx = 0;
+        if (Math.abs(ent.vy) < 0.1) ent.vy = 0;
+
+        ent.x += ent.vx * dt;
+        ent.y += ent.vy * dt;
     }
 
     if (moveSpeed > 0 && ent.targetX !== undefined && ent.targetY !== undefined) {
         const dx = ent.targetX - ent.x;
         const dy = ent.targetY - ent.y;
-        const distToTarget = Math.sqrt(dx*dx + dy*dy);
-        
+        const distToTarget = Math.sqrt(dx * dx + dy * dy);
+
         if (distToTarget > 0.1) {
             const moveX = (dx / distToTarget) * moveSpeed * dt;
             const moveY = (dy / distToTarget) * moveSpeed * dt;
-            
+
             // Biome & Collision Check
             // We check the tile directly ahead. If it's invalid biome, we stop.
             const nextTileX = getTileAt(world, Math.floor(ent.x + moveX), Math.floor(ent.y));
             const nextTileY = getTileAt(world, Math.floor(ent.x), Math.floor(ent.y + moveY));
-            
+
             const canMoveX = checkCollision(world, ent.x + moveX, ent.y) === false && isTileCompatible(ent.type, nextTileX);
             const canMoveY = checkCollision(world, ent.x, ent.y + moveY) === false && isTileCompatible(ent.type, nextTileY);
 
@@ -954,7 +961,7 @@ const processEntityBehavior = (ent: Entity, player: Player, world: World, dt: nu
 
             if (canMoveX) ent.x += moveX * speedMod;
             if (canMoveY) ent.y += moveY * speedMod;
-            
+
             // If completely blocked by biome or collision while wandering, pick new state
             if (!canMoveX && !canMoveY && ent.state === 'wander') {
                 ent.state = 'idle';
@@ -969,32 +976,32 @@ const processEntityBehavior = (ent: Entity, player: Player, world: World, dt: nu
 const updateEntities = (dt: number, world: World, player: Player, refs: any, callbacks: UpdateCallbacks, rX: number, rY: number) => {
     const { cx, cy } = getChunkCoords(player.x, player.y);
     // Iterate over visible chunks plus buffer to process entities
-    for(let dy=-rY; dy<=rY; dy++) {
-        for(let dx=-rX; dx<=rX; dx++) {
-            const key = getChunkKey(cx+dx, cy+dy);
+    for (let dy = -rY; dy <= rY; dy++) {
+        for (let dx = -rX; dx <= rX; dx++) {
+            const key = getChunkKey(cx + dx, cy + dy);
             const chunk = world.chunks[key];
-            if(!chunk) continue;
+            if (!chunk) continue;
 
             // Dropped Items
-            for(let i = chunk.droppedItems.length - 1; i >= 0; i--) {
+            for (let i = chunk.droppedItems.length - 1; i >= 0; i--) {
                 const item = chunk.droppedItems[i];
                 item.pickupDelay -= dt; item.lifeTime -= dt;
                 if (item.lifeTime <= 0) { chunk.droppedItems.splice(i, 1); continue; }
-                
+
                 if (item.pickupDelay <= 0 && dist(player.x, player.y, item.x, item.y) < 0.8) {
                     let pickedUp = false;
-                    const inv = player.inventory; 
-                    
+                    const inv = player.inventory;
+
                     // Try to stack
                     for (let j = 0; j < inv.length; j++) {
                         const slot = inv[j];
                         if (slot && slot.type === item.type && !slot.durability && !item.durability) {
                             const space = MAX_STACK_SIZE - slot.count;
                             const add = Math.min(space, item.count);
-                            if (add > 0) { 
-                                inv[j] = { ...slot, count: slot.count + add }; 
-                                item.count -= add; 
-                                if (item.count <= 0) pickedUp = true; 
+                            if (add > 0) {
+                                inv[j] = { ...slot, count: slot.count + add };
+                                item.count -= add;
+                                if (item.count <= 0) pickedUp = true;
                             }
                         }
                         if (pickedUp) break;
@@ -1002,20 +1009,20 @@ const updateEntities = (dt: number, world: World, player: Player, refs: any, cal
                     // Try to fill empty
                     if (!pickedUp && item.count > 0) {
                         const emptyIdx = inv.findIndex(s => s === null);
-                        if (emptyIdx >= 0) { 
-                            inv[emptyIdx] = { 
-                                type: item.type, 
-                                count: item.count, 
-                                durability: item.durability, 
-                                maxDurability: item.maxDurability 
-                            }; 
-                            pickedUp = true; 
+                        if (emptyIdx >= 0) {
+                            inv[emptyIdx] = {
+                                type: item.type,
+                                count: item.count,
+                                durability: item.durability,
+                                maxDurability: item.maxDurability
+                            };
+                            pickedUp = true;
                         }
                     }
 
                     if (pickedUp) {
                         chunk.droppedItems.splice(i, 1);
-                        callbacks.onInventoryUpdate([...inv]); 
+                        callbacks.onInventoryUpdate([...inv]);
                         callbacks.onStatusUpdate(`Picked up ${ITEM_NAMES[item.type]}`);
                         callbacks.spawnParticles(player.x, player.y, '#ffffff', 2, 2);
                     }
@@ -1024,7 +1031,7 @@ const updateEntities = (dt: number, world: World, player: Player, refs: any, cal
 
             // Mobs
             const entities = chunk.entities;
-            for(let i=entities.length-1; i>=0; i--) {
+            for (let i = entities.length - 1; i >= 0; i--) {
                 const ent = entities[i];
                 if (ent.type === EntityType.BOAT) continue; // Boats handled in main loop
 
@@ -1032,7 +1039,7 @@ const updateEntities = (dt: number, world: World, player: Player, refs: any, cal
                     // Projectile Logic
                     if (ent.vx === undefined) ent.vx = 0;
                     if (ent.vy === undefined) ent.vy = 0;
-                    
+
                     const nextX = ent.x + ent.vx * dt;
                     const nextY = ent.y + ent.vy * dt;
 
@@ -1047,24 +1054,24 @@ const updateEntities = (dt: number, world: World, player: Player, refs: any, cal
                         entities.splice(i, 1);
                         continue;
                     }
-                    
+
                     ent.x = nextX;
                     ent.y = nextY;
 
                     // Entity Collision
                     let hit = false;
-                    for(let j=entities.length-1; j>=0; j--) {
+                    for (let j = entities.length - 1; j >= 0; j--) {
                         const target = entities[j];
                         if (target === ent) continue;
                         if (target.type === EntityType.BOAT || target.type === EntityType.ARROW || target.type === EntityType.POISON_ARROW || target.type === EntityType.SNOWBALL) continue;
-                        
+
                         if (dist(ent.x, ent.y, target.x, target.y) < 0.5) {
                             // HIT!
-                            const damage = ent.type === EntityType.ARROW ? ARROW_STATS.damage : 
-                                           ent.type === EntityType.POISON_ARROW ? POISON_ARROW_STATS.damage : SNOWBALL_STATS.damage;
-                            
+                            const damage = ent.type === EntityType.ARROW ? ARROW_STATS.damage :
+                                ent.type === EntityType.POISON_ARROW ? POISON_ARROW_STATS.damage : SNOWBALL_STATS.damage;
+
                             target.health -= damage;
-                            
+
                             // Apply Knockback
                             if (ent.type === EntityType.SNOWBALL) {
                                 const angle = Math.atan2(ent.vy, ent.vx);
@@ -1073,11 +1080,11 @@ const updateEntities = (dt: number, world: World, player: Player, refs: any, cal
                             }
 
                             // Aggro
-                            if (target.type === EntityType.COW || target.type === EntityType.RABBIT) { target.state = 'flee'; target.stateTimer = 2.0; } 
+                            if (target.type === EntityType.COW || target.type === EntityType.RABBIT) { target.state = 'flee'; target.stateTimer = 2.0; }
                             else if (target.type === EntityType.SNAKE || target.type === EntityType.POISON_SNAKE || target.type === EntityType.SCORPION || target.type === EntityType.SPIDER || target.type === EntityType.POISON_SPIDER) { target.state = 'chase'; target.stateTimer = 5.0; }
 
                             callbacks.spawnParticles(target.x, target.y, '#ef4444', 3, 2);
-                            
+
                             // Apply Poison if Poison Arrow
                             if (ent.type === EntityType.POISON_ARROW) {
                                 // Entities don't have separate poison logic implemented fully yet (only player has poisonTimer in state),
@@ -1104,7 +1111,7 @@ const updateEntities = (dt: number, world: World, player: Player, refs: any, cal
                                     if (Math.random() < RABBIT_STATS.dropRateLeg) callbacks.spawnDroppedItem(target.x, target.y, { type: ItemType.RABBIT_LEG, count: 1 });
                                 }
                             }
-                            
+
                             hit = true;
                             break;
                         }
@@ -1114,31 +1121,31 @@ const updateEntities = (dt: number, world: World, player: Player, refs: any, cal
                         entities.splice(i, 1);
                         continue;
                     }
-                    
+
                     // Lifetime/Distance check
-                    ent.health -= dt; 
-                    if (ent.health <= -1.0) { 
-                         // Drop item when out of range (Arrows only)
-                         if (ent.type === EntityType.ARROW || ent.type === EntityType.POISON_ARROW) {
+                    ent.health -= dt;
+                    if (ent.health <= -1.0) {
+                        // Drop item when out of range (Arrows only)
+                        if (ent.type === EntityType.ARROW || ent.type === EntityType.POISON_ARROW) {
                             const dropType = ent.type === EntityType.POISON_ARROW ? ItemType.POISON_ARROW : ItemType.ARROW;
                             callbacks.spawnDroppedItem(ent.x, ent.y, { type: dropType, count: 1 });
-                         }
-                         entities.splice(i, 1);
-                         continue;
+                        }
+                        entities.splice(i, 1);
+                        continue;
                     }
                 } else {
                     processEntityBehavior(ent, player, world, dt, callbacks, refs);
                 }
-                
+
                 // Keep entity in correct chunk
-                const currentChunkKey = getChunkKey(Math.floor(ent.x/CHUNK_SIZE), Math.floor(ent.y/CHUNK_SIZE));
+                const currentChunkKey = getChunkKey(Math.floor(ent.x / CHUNK_SIZE), Math.floor(ent.y / CHUNK_SIZE));
                 if (currentChunkKey !== key) {
                     const newChunk = world.chunks[currentChunkKey];
-                    if (newChunk) { 
-                        newChunk.entities.push(ent); 
-                        entities.splice(i, 1); 
-                    } else { 
-                        ent.x -= (ent.x % 1); 
+                    if (newChunk) {
+                        newChunk.entities.push(ent);
+                        entities.splice(i, 1);
+                    } else {
+                        ent.x -= (ent.x % 1);
                     }
                 }
             }
