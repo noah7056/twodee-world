@@ -57,6 +57,16 @@ const HUD: React.FC<HUDProps> = (props) => {
         zIndex: 10
     };
 
+    // Mobile override: Force 80% scale on mobile if not already smaller
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) {
+        // Adjust scale to be smaller on mobile to fit screen
+        const mobileScale = settings.guiScale * 0.8;
+        uiTransform.transform = `scale(${mobileScale})`;
+        uiTransform.width = `${100 / mobileScale}%`;
+        uiTransform.height = `${100 / mobileScale}%`;
+        uiTransform.marginLeft = `-${50 / mobileScale}%`;
+    }
+
     return (
         <div style={uiTransform}>
             <div style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>

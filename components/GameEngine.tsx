@@ -103,7 +103,7 @@ const GameEngine: React.FC<GameEngineProps> = ({
             // Long Press Detected: Start "Breaking" (Left Click Hold)
             setMouseState(x, y, true, false);
             touchStartRef.current = null; // Consume the touch for tap logic
-        }, 300); // 300ms for long press
+        }, 500); // 500ms for long press (less accidental breaks)
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
@@ -167,26 +167,30 @@ const GameEngine: React.FC<GameEngineProps> = ({
                         // Priority 2: Holding Placeable/Eatable (Right Click)
                         const heldItem = playerRef.current.inventory[playerRef.current.selectedItemIndex];
                         if (heldItem) {
-                            // If food -> Eat (Right Click)
-                            // If block -> Place (Right Click)
-                            // Simple check: Is it a tool/weapon?
-                            const isTool = heldItem.type.includes('SWORD') || heldItem.type.includes('PICKAXE') || heldItem.type.includes('AXE');
+                            // Logic: If holding block/food -> Right Click to Place/Eat.
+                            // If holding Weapon/Tool -> Left Click to Attack.
+                            // If empty hand -> Left Click to Attack (Punch)
+
+                            // Check for placeable/consumable types explicitly or by exclusion of tools
+                            const isTool = heldItem.type.includes('SWORD') || heldItem.type.includes('PICKAXE') || heldItem.type.includes('AXE') || heldItem.type === ItemType.FISHING_ROD || heldItem.type === ItemType.BOW;
+
                             if (!isTool) {
+                                // Assume it's a block, food, or random item -> Try interacting (Place/Eat)
                                 action = 'interact';
                             }
                         }
                     }
                 }
 
-                // Trigger the action for one frame
+                // Trigger the action
                 if (action === 'interact') {
                     setMouseState(touch.clientX, touch.clientY, false, true); // Right Click
                 } else {
                     setMouseState(touch.clientX, touch.clientY, true, false); // Left Click
                 }
 
-                // Reset after short delay to simulate click
-                setTimeout(() => setMouseState(0, 0, false, false), 50);
+                // Reset after slightly longer delay to ensure game loop catches it (100ms)
+                setTimeout(() => setMouseState(0, 0, false, false), 100);
             }
         }
         touchStartRef.current = null;

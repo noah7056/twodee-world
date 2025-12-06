@@ -85,7 +85,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({ onInput }) => 
     return (
         <div
             ref={containerRef}
-            className="fixed bottom-8 left-8 w-[120px] h-[120px] bg-black/30 rounded-full border-2 border-white/20 backdrop-blur-sm touch-none z-50 flex items-center justify-center p-0 m-0"
+            className="fixed bottom-24 left-8 w-[120px] h-[120px] bg-black/30 rounded-full border-2 border-white/20 backdrop-blur-sm touch-none z-50 flex items-center justify-center p-0 m-0"
             onTouchStart={handleTouchStart}
             style={{ touchAction: 'none' }} // Crucial for preventing scroll
         >

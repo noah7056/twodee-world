@@ -16,7 +16,7 @@ export const MobileControls: React.FC<MobileControlsProps> = ({ onInput, onToggl
             <VirtualJoystick onInput={onInput} />
 
             {/* Right Side Buttons */}
-            <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50 pointer-events-auto">
+            <div className="fixed bottom-24 right-8 flex flex-col gap-4 z-50 pointer-events-auto">
                 {/* Sprint Button (Hold) */}
                 <button
                     className="w-16 h-16 bg-amber-600/80 rounded-full border-2 border-amber-400 flex items-center justify-center active:scale-95 transition-transform"
