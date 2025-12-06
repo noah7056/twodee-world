@@ -1,5 +1,4 @@
 
-
 import { World, Player, Entity, EntityType, DroppedItem, TileType, ItemType, InventoryItem, Settings, Particle } from '../types';
 import {
     TILE_SIZE, CHUNK_SIZE, PLAYER_SPEED, RUN_SPEED_MULTIPLIER, WATER_SPEED_MULTIPLIER,
@@ -7,7 +6,7 @@ import {
     BUSH_DAMAGE, CACTUS_DAMAGE, BOAT_STATS, MAX_STACK_SIZE, ITEM_NAMES, COLORS,
     COLLIDABLE_TILES, INTERACTABLE_TILES, BREAK_TIMES, TOOL_CONFIG, COW_STATS,
     SNAKE_STATS, SCORPION_STATS, SPIDER_STATS, POISON_SPIDER_STATS, CONTAINER_SIZE, GROWTH_TIME,
-    CHARM_CONFIG, ARROW_STATS, SNOWBALL_STATS, RABBIT_STATS, POISON_ARROW_STATS, POISON_SNAKE_STATS
+    CHARM_CONFIG, ARROW_STATS, SNOWBALL_STATS, RABBIT_STATS, POISON_ARROW_STATS, POISON_SNAKE_STATS, CAMPFIRE_STATS
 } from '../constants';
 import { getChunkCoords, getChunkKey, generateChunk, dist } from '../utils/gameUtils';
 
@@ -71,6 +70,61 @@ interface UpdateCallbacks {
     onContainerNearby: (id: string | null, items: (InventoryItem | null)[] | null) => void;
     onStationUpdate: (isNear: boolean) => void;
 }
+
+export const updateCampfires = (world: World, deltaTime: number, player: Player) => {
+    // 1. Iterate over all chunks
+    Object.values(world.chunks).forEach(chunk => {
+        if (!chunk.campfires) return;
+
+        Object.keys(chunk.campfires).forEach(key => {
+            const campfire = chunk.campfires[key];
+            const [lx, ly] = key.split(',').map(Number);
+            const gx = chunk.x * CHUNK_SIZE + lx;
+            const gy = chunk.y * CHUNK_SIZE + ly;
+
+            // 2. Burn Fuel
+            if (campfire.fuelTime > 0) {
+                campfire.fuelTime -= deltaTime;
+
+                // Heal Player if close
+                const d = dist(player.x, player.y, gx + 0.5, gy + 0.5);
+                if (d < CAMPFIRE_STATS.radius) {
+                    player.health = Math.min(player.health + CAMPFIRE_STATS.healRate * deltaTime, player.maxHealth);
+                }
+
+                // Spawn Particles (Smoke/Fire) periodically
+                if (Math.random() < 0.1) {
+                    // Logic handles state; Renderer handles visuals.
+                }
+
+            } else {
+                // 3. Try Refuel from Container
+                const container = chunk.containers?.[key];
+                if (container) {
+                    // Look for fuel
+                    const woodIndex = container.findIndex(i => i?.type === ItemType.WOOD);
+                    const coalIndex = container.findIndex(i => i?.type === ItemType.COAL);
+
+                    if (coalIndex !== -1) {
+                        // Uses Coal
+                        const coal = container[coalIndex]!;
+                        campfire.fuelTime += CAMPFIRE_STATS.fuelPerCoal;
+                        coal.count--;
+                        if (coal.count <= 0) container[coalIndex] = null;
+                    } else if (woodIndex !== -1) {
+                        // Uses Wood
+                        const wood = container[woodIndex]!;
+                        campfire.fuelTime += CAMPFIRE_STATS.fuelPerWood;
+                        wood.count--;
+                        if (wood.count <= 0) container[woodIndex] = null;
+                    }
+                }
+            }
+        });
+    });
+};
+
+
 
 export const updateParticles = (deltaTime: number, particles: Particle[]) => {
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -372,6 +426,7 @@ export const updateGame = (
 
     // --- Entities Update & Item Pickup ---
     updateEntities(deltaTime, world, player, refs, callbacks, rX, rY);
+    updateCampfires(world, deltaTime, player);
 
     // --- Environment Check ---
     const px = Math.floor(player.x); const py = Math.floor(player.y);
@@ -559,26 +614,53 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
         const isPick = selectedItem && (selectedItem.type.includes('PICKAXE'));
         const isAxe = selectedItem && (selectedItem.type.includes('AXE'));
         const isSword = selectedItem && (selectedItem.type.includes('SWORD'));
-        const isHardObject = [TileType.WALL_WOOD, TileType.WALL_STONE, TileType.CRAFTING_STATION, TileType.CHEST, TileType.GOLD_ORE].includes(targetType);
+
+        // Ores require pickaxe (except stone which can be mined slowly by hand)
+        const isOre = [TileType.IRON_ORE, TileType.GOLD_ORE, TileType.COAL_ORE].includes(targetType);
+        // Rock/Stone can be mined without pickaxe (just slower)
+        const isStone = targetType === TileType.ROCK;
+        // Building blocks that require specific tools
+        const isWoodBuilding = [TileType.WALL_WOOD, TileType.FLOOR_WOOD].includes(targetType);
+        const isStoneBuilding = [TileType.WALL_STONE, TileType.FLOOR_STONE].includes(targetType);
+        // Items that don't need tools to break
+        const isFurniture = [TileType.CRAFTING_STATION, TileType.CHEST].includes(targetType);
 
         let isWrongTool = false;
-        if (isHardObject) {
-            let validTool = false;
-            if (targetType === TileType.WALL_STONE && isPick) validTool = true;
-            if ((targetType === TileType.WALL_WOOD || targetType === TileType.CRAFTING_STATION || targetType === TileType.CHEST || targetType === TileType.FLOOR_WOOD) && isAxe) validTool = true;
 
-            // Gold Ore Requirement: Iron Pickaxe or better (Including Gold Pickaxe if available)
-            if (targetType === TileType.GOLD_ORE) {
-                if (selectedItem && (selectedItem.type === ItemType.IRON_PICKAXE || selectedItem.type === ItemType.GOLD_PICKAXE)) {
-                    validTool = true;
+        // Ores REQUIRE pickaxe - can't mine without it
+        if (isOre) {
+            if (!isPick) {
+                isWrongTool = true;
+                if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("Need a pickaxe to mine ores!");
+            }
+            // Gold ore requires iron pickaxe or better
+            if (targetType === TileType.GOLD_ORE && isPick) {
+                if (selectedItem && !(selectedItem.type === ItemType.IRON_PICKAXE || selectedItem.type === ItemType.GOLD_PICKAXE)) {
+                    isWrongTool = true;
+                    if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("Need an iron pickaxe for gold!");
                 }
             }
-
-            if (!validTool) {
-                isWrongTool = true;
-                if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("Wrong tool! This will be slow...");
-            }
         }
+
+        // Wood buildings work better with axe
+        if (isWoodBuilding && !isAxe) {
+            isWrongTool = true;
+            if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("An axe would be faster...");
+        }
+
+        // Stone buildings require pickaxe
+        if (isStoneBuilding && !isPick) {
+            isWrongTool = true;
+            if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("Need a pickaxe for stone walls!");
+        }
+
+        // Stone/Rock: pickaxe is faster but not required
+        if (isStone && !isPick) {
+            // Not "wrong tool" but will be slow - handled by speedMultiplier below
+        }
+
+        // Furniture (chest, crafting station) - no tool needed
+        // isFurniture doesn't set isWrongTool
 
         if (!refs.breaking.current || refs.breaking.current.x !== tileX || refs.breaking.current.y !== tileY) {
             const requiredTime = BREAK_TIMES[targetType] || 1.0;
@@ -591,7 +673,7 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
                     if (selectedItem.type === ItemType.IRON_AXE) speedMultiplier = 3.0;
                     if (selectedItem.type === ItemType.GOLD_AXE) speedMultiplier = 4.0;
                 }
-                if (targetType === TileType.ROCK || targetType === TileType.IRON_ORE || targetType === TileType.GOLD_ORE || targetType === TileType.WALL_STONE || targetType === TileType.FLOOR_STONE) {
+                if (targetType === TileType.ROCK || targetType === TileType.IRON_ORE || targetType === TileType.GOLD_ORE || targetType === TileType.COAL_ORE || targetType === TileType.WALL_STONE || targetType === TileType.FLOOR_STONE) {
                     if (selectedItem.type === ItemType.WOOD_PICKAXE) speedMultiplier = 1.5;
                     if (selectedItem.type === ItemType.STONE_PICKAXE) speedMultiplier = 2.0;
                     if (selectedItem.type === ItemType.IRON_PICKAXE) speedMultiplier = 3.0;
@@ -661,6 +743,27 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
                 else if (targetType === TileType.FLOOR_WOOD) drops.push({ type: ItemType.FLOOR_WOOD_ITEM, count: 1 });
                 else if (targetType === TileType.FLOOR_STONE) drops.push({ type: ItemType.FLOOR_STONE_ITEM, count: 1 });
                 else if (targetType === TileType.CACTUS) drops.push({ type: ItemType.CACTUS, count: 1 });
+                else if (targetType === TileType.COAL_ORE) drops.push({ type: ItemType.COAL, count: 1 * yieldBonus });
+                else if (targetType === TileType.CAMPFIRE) {
+                    // 20% chance to drop 1 wood, no campfire drop
+                    if (Math.random() < 0.2) {
+                        drops.push({ type: ItemType.WOOD, count: 1 });
+                    }
+                    // Cleanup campfire data
+                    const chunksCoords = getChunkCoords(tileX, tileY);
+                    const chunkKey = getChunkKey(chunksCoords.cx, chunksCoords.cy);
+                    const chunk = world.chunks[chunkKey];
+                    const key = `${chunksCoords.lx},${chunksCoords.ly}`;
+
+                    if (chunk) {
+                        if (chunk.containers && chunk.containers[key]) {
+                            delete chunk.containers[key];
+                        }
+                        if (chunk.campfires && chunk.campfires[key]) {
+                            delete chunk.campfires[key];
+                        }
+                    }
+                }
             }
 
             // Reduce durability on break
@@ -788,6 +891,20 @@ const handlePlacing = (targetX: number, targetY: number, world: World, player: P
             if (selectedItem.type === ItemType.BERRY_SEED && (tileType === TileType.GRASS || tileType === TileType.SNOW)) { newObjType = TileType.BUSH_SAPLING; refs.saplings.current.push({ x: tileX, y: tileY, plantTime: Date.now() }); }
             if (selectedItem.type === ItemType.COBWEB) { newObjType = TileType.COBWEB; }
             if (selectedItem.type === ItemType.SNOW_BLOCK) { newObjType = TileType.SNOW_BLOCK; }
+            if (selectedItem.type === ItemType.CAMPFIRE) {
+                newObjType = TileType.CAMPFIRE;
+                setContainerAt(world, tileX, tileY, [null, null, null]); // 3 slots
+
+                // Init campfire data
+                const { key, lx, ly } = getChunkCoords(tileX, tileY);
+                if (world.chunks[key]) {
+                    if (!world.chunks[key].campfires) world.chunks[key].campfires = {};
+                    world.chunks[key].campfires[`${lx},${ly}`] = {
+                        fuelTime: CAMPFIRE_STATS.initialFuel,
+                        maxFuelTime: CAMPFIRE_STATS.initialFuel
+                    };
+                }
+            }
 
             if (newObjType) {
                 setObjectAt(world, tileX, tileY, newObjType);

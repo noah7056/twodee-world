@@ -29,6 +29,8 @@ export enum TileType {
   PINE_SAPLING = 118,
   SNOW_PILE = 119,
   SNOW_BLOCK = 120,
+  COAL_ORE = 121,
+  CAMPFIRE = 122,
 }
 
 export enum ItemType {
@@ -88,6 +90,8 @@ export enum ItemType {
   RABBIT_LEG = 'RABBIT_LEG',
   BACKPACK = 'BACKPACK',
   POISON_ARROW = 'POISON_ARROW',
+  COAL = 'COAL',
+  CAMPFIRE = 'CAMPFIRE',
 }
 
 export enum EntityType {
@@ -153,10 +157,10 @@ export interface Player {
   y: number;
   inventory: (InventoryItem | null)[];
   equipment: {
-      head: InventoryItem | null;
-      body: InventoryItem | null;
-      accessory: InventoryItem | null;
-      bag: InventoryItem | null;
+    head: InventoryItem | null;
+    body: InventoryItem | null;
+    accessory: InventoryItem | null;
+    bag: InventoryItem | null;
   };
   selectedItemIndex: number;
   facing: 'up' | 'down' | 'left' | 'right';
@@ -176,6 +180,7 @@ export interface Chunk {
   containers: Record<string, (InventoryItem | null)[]>; // key "lx,ly"
   entities: Entity[];
   droppedItems: DroppedItem[];
+  campfires: Record<string, { fuelTime: number, maxFuelTime: number }>; // key "lx,ly"
   // Optimization: Cached canvas for the static terrain to avoid re-drawing every frame
   terrainCache?: HTMLCanvasElement | null;
 }
@@ -213,52 +218,52 @@ export interface Particle {
 }
 
 export interface WorldSeedConfig {
-    seed: number;
-    seedY: number;
-    rotation: number;
-    tempOffset: number;
-    mountainOffset: number;
+  seed: number;
+  seedY: number;
+  rotation: number;
+  tempOffset: number;
+  mountainOffset: number;
 }
 
 // Save System Types
 export interface SaveMeta {
-    id: number;
-    name: string;
-    lastPlayed: number; // timestamp
+  id: number;
+  name: string;
+  lastPlayed: number; // timestamp
 }
 
 export interface SaveData {
-    meta: SaveMeta;
-    player: {
-        x: number;
-        y: number;
-        health: number;
-        stamina: number;
-        inventory: (InventoryItem | null)[];
-        equipment: { head: InventoryItem | null, body: InventoryItem | null, accessory: InventoryItem | null, bag: InventoryItem | null };
-        rotation: number;
-        poisonTimer?: number;
-    };
-    world: {
-        chunks: Record<string, Chunk>;
-        saplings: {x: number, y: number, plantTime: number, isWheat?: boolean, isPine?: boolean}[];
-        seedConfig: WorldSeedConfig;
-    };
-    camera: { x: number, y: number };
+  meta: SaveMeta;
+  player: {
+    x: number;
+    y: number;
+    health: number;
+    stamina: number;
+    inventory: (InventoryItem | null)[];
+    equipment: { head: InventoryItem | null, body: InventoryItem | null, accessory: InventoryItem | null, bag: InventoryItem | null };
+    rotation: number;
+    poisonTimer?: number;
+  };
+  world: {
+    chunks: Record<string, Chunk>;
+    saplings: { x: number, y: number, plantTime: number, isWheat?: boolean, isPine?: boolean }[];
+    seedConfig: WorldSeedConfig;
+  };
+  camera: { x: number, y: number };
 }
 
 // Settings Types
 export interface Keybinds {
-    moveUp: string;
-    moveDown: string;
-    moveLeft: string;
-    moveRight: string;
-    inventory: string;
-    run: string;
+  moveUp: string;
+  moveDown: string;
+  moveLeft: string;
+  moveRight: string;
+  inventory: string;
+  run: string;
 }
 
 export interface Settings {
-    guiScale: number;
-    cameraZoom: number;
-    keybinds: Keybinds;
+  guiScale: number;
+  cameraZoom: number;
+  keybinds: Keybinds;
 }

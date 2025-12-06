@@ -23,8 +23,8 @@ export const drawItem = (ctx: CanvasRenderingContext2D, type: ItemType, x: numbe
 const drawItemSprite = (ctx: CanvasRenderingContext2D, type: ItemType) => {
     if ([ItemType.WOOD, ItemType.WALL_WOOD_ITEM, ItemType.FLOOR_WOOD_ITEM].includes(type)) { ctx.fillStyle = '#5D4037'; ctx.fillRect(12, 8, 24, 32); }
     else if ([ItemType.STONE, ItemType.WALL_STONE_ITEM].includes(type)) { ctx.fillStyle = '#78716C'; ctx.beginPath(); ctx.moveTo(24, 8); ctx.lineTo(40, 24); ctx.lineTo(24, 40); ctx.lineTo(8, 24); ctx.fill(); }
-    else if (type === ItemType.IRON) { ctx.fillStyle = '#57534E'; ctx.beginPath(); ctx.moveTo(24, 8); ctx.lineTo(40, 24); ctx.lineTo(24, 40); ctx.lineTo(8, 24); ctx.fill(); ctx.fillStyle = '#F87171'; ctx.beginPath(); ctx.arc(24, 24, 4, 0, Math.PI * 2); ctx.fill(); }
-    else if (type === ItemType.GOLD) { ctx.fillStyle = '#57534E'; ctx.beginPath(); ctx.moveTo(24, 8); ctx.lineTo(40, 24); ctx.lineTo(24, 40); ctx.lineTo(8, 24); ctx.fill(); ctx.fillStyle = '#FBBF24'; ctx.beginPath(); ctx.arc(24, 24, 4, 0, Math.PI * 2); ctx.fill(); }
+    else if (type === ItemType.IRON) { ctx.fillStyle = '#57534E'; ctx.beginPath(); ctx.moveTo(24, 8); ctx.lineTo(40, 24); ctx.lineTo(24, 40); ctx.lineTo(8, 24); ctx.fill(); ctx.fillStyle = '#F87171'; ctx.beginPath(); ctx.arc(18, 20, 3, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(30, 18, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(26, 30, 3, 0, Math.PI * 2); ctx.fill(); }
+    else if (type === ItemType.GOLD) { ctx.fillStyle = '#57534E'; ctx.beginPath(); ctx.moveTo(24, 8); ctx.lineTo(40, 24); ctx.lineTo(24, 40); ctx.lineTo(8, 24); ctx.fill(); ctx.fillStyle = '#FBBF24'; ctx.beginPath(); ctx.arc(18, 20, 3, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(30, 18, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(26, 30, 3, 0, Math.PI * 2); ctx.fill(); }
     else if (type === ItemType.BERRY) { ctx.fillStyle = '#EF4444'; ctx.beginPath(); ctx.arc(24, 24, 8, 0, Math.PI * 2); ctx.fill(); }
     else if (type.includes('AXE') || type.includes('PICKAXE') || type.includes('SWORD')) {
         ctx.fillStyle = type.includes('GOLD') ? '#FBBF24' : type.includes('IRON') ? '#E5E7EB' : type.includes('STONE') ? '#9CA3AF' : '#8D6E63';
@@ -68,6 +68,12 @@ const drawItemSprite = (ctx: CanvasRenderingContext2D, type: ItemType) => {
         ctx.fillStyle = '#854D0E'; ctx.strokeStyle = '#422006'; ctx.lineWidth = 2;
         ctx.fillRect(12, 12, 24, 24); ctx.strokeRect(12, 12, 24, 24);
         ctx.fillStyle = '#A16207'; ctx.beginPath(); ctx.moveTo(12, 16); ctx.lineTo(36, 16); ctx.lineTo(32, 24); ctx.lineTo(16, 24); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    else if (type === ItemType.COAL) { ctx.fillStyle = '#57534E'; ctx.beginPath(); ctx.moveTo(24, 8); ctx.lineTo(40, 24); ctx.lineTo(24, 40); ctx.lineTo(8, 24); ctx.fill(); ctx.fillStyle = '#171717'; ctx.beginPath(); ctx.arc(18, 20, 3, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(30, 18, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(26, 30, 3, 0, Math.PI * 2); ctx.fill(); }
+    else if (type === ItemType.CAMPFIRE) {
+        ctx.fillStyle = '#5D4037'; ctx.fillRect(12, 28, 24, 6);
+        ctx.translate(24, 30); ctx.rotate(Math.PI / 4); ctx.fillRect(-12, -3, 24, 6); ctx.rotate(-Math.PI / 4); ctx.translate(-24, -30);
+        ctx.fillStyle = '#EF4444'; ctx.beginPath(); ctx.moveTo(24, 30); ctx.quadraticCurveTo(34, 10, 24, 10); ctx.quadraticCurveTo(14, 10, 24, 30); ctx.fill();
     }
     else { ctx.fillStyle = '#60A5FA'; ctx.fillRect(16, 16, 16, 16); }
 };
@@ -290,6 +296,53 @@ export const drawWorld = (
                         } else if (obj === TileType.SNOW_PILE || obj === TileType.SNOW_BLOCK) {
                             ctx.fillStyle = '#F1F5F9'; ctx.beginPath(); ctx.ellipse(tx + TILE_SIZE / 2, ty + TILE_SIZE * 0.7, TILE_SIZE * 0.4, TILE_SIZE * 0.2, 0, 0, Math.PI * 2); ctx.fill();
                             ctx.fillStyle = '#E2E8F0'; ctx.beginPath(); ctx.ellipse(tx + TILE_SIZE / 2 - 5, ty + TILE_SIZE * 0.65, TILE_SIZE * 0.2, TILE_SIZE * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+                        } else if (obj === TileType.COAL_ORE) {
+                            ctx.fillStyle = '#44403c'; ctx.beginPath(); ctx.moveTo(tx + TILE_SIZE * 0.2, ty + TILE_SIZE * 0.8); ctx.lineTo(tx + TILE_SIZE * 0.1, ty + TILE_SIZE * 0.4); ctx.lineTo(tx + TILE_SIZE * 0.5, ty + TILE_SIZE * 0.1); ctx.lineTo(tx + TILE_SIZE * 0.9, ty + TILE_SIZE * 0.5); ctx.lineTo(tx + TILE_SIZE * 0.7, ty + TILE_SIZE * 0.9); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#171717';
+                            const drawSpot = (ox: number, oy: number) => { ctx.beginPath(); ctx.arc(tx + TILE_SIZE * ox, ty + TILE_SIZE * oy, 3, 0, Math.PI * 2); ctx.fill(); };
+                            drawSpot(0.4, 0.4); drawSpot(0.6, 0.3); drawSpot(0.5, 0.7);
+                        } else if (obj === TileType.CAMPFIRE) {
+                            // Base logs
+                            ctx.fillStyle = '#5D4037';
+                            ctx.save(); ctx.translate(tx + TILE_SIZE / 2, ty + TILE_SIZE / 2);
+                            ctx.rotate(Math.PI / 4); ctx.fillRect(-12, -4, 24, 8);
+                            ctx.rotate(Math.PI / 2); ctx.fillRect(-12, -4, 24, 8);
+                            ctx.restore();
+
+                            // Fire (if lit)
+                            const campfireData = chunk.campfires?.[`${lx},${ly}`];
+                            if (campfireData && campfireData.fuelTime > 0) {
+                                // Subtle healing radius indicator
+                                const healRadius = 5 * TILE_SIZE; // 5 tiles
+                                ctx.strokeStyle = 'rgba(251, 146, 60, 0.15)'; // Very subtle orange
+                                ctx.lineWidth = 2;
+                                ctx.beginPath();
+                                ctx.arc(tx + TILE_SIZE / 2, ty + TILE_SIZE / 2, healRadius, 0, Math.PI * 2);
+                                ctx.stroke();
+
+                                ctx.fillStyle = '#EF4444'; // Red
+                                const flicker = Math.sin(time * 20) * 3;
+                                ctx.beginPath();
+                                ctx.moveTo(tx + TILE_SIZE * 0.3, ty + TILE_SIZE * 0.6);
+                                ctx.quadraticCurveTo(tx + TILE_SIZE * 0.5, ty + TILE_SIZE * 0.1 + flicker, tx + TILE_SIZE * 0.7, ty + TILE_SIZE * 0.6);
+                                ctx.fill();
+                                ctx.fillStyle = '#F59E0B'; // Orange core
+                                ctx.beginPath();
+                                ctx.moveTo(tx + TILE_SIZE * 0.4, ty + TILE_SIZE * 0.6);
+                                ctx.quadraticCurveTo(tx + TILE_SIZE * 0.5, ty + TILE_SIZE * 0.3 + flicker, tx + TILE_SIZE * 0.6, ty + TILE_SIZE * 0.6);
+                                ctx.fill();
+
+                                // Smoke particles effect (simple visual only)
+                                if (Math.random() < 0.3) {
+                                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                                    ctx.beginPath();
+                                    ctx.arc(tx + TILE_SIZE / 2 + Math.random() * 10 - 5, ty + TILE_SIZE * 0.2 - (time * 50) % 20, 2 + Math.random() * 2, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                            } else {
+                                // Ash / Burnt out
+                                ctx.fillStyle = '#1c1917';
+                                ctx.beginPath(); ctx.arc(tx + TILE_SIZE / 2, ty + TILE_SIZE / 2, 6, 0, Math.PI * 2); ctx.fill();
+                            }
                         } else {
                             ctx.fillStyle = COLORS[obj] || '#ff00ff'; ctx.fillRect(tx + 2, ty + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                         }

@@ -1,7 +1,7 @@
 
 
 import { TileType, Chunk, World, EntityType, Entity, WorldSeedConfig, InventoryItem, ItemType } from "../types";
-import { CHUNK_SIZE, COW_STATS, SNAKE_STATS, SCORPION_STATS, SPIDER_STATS, POISON_SPIDER_STATS, CONTAINER_SIZE, RABBIT_STATS, POISON_SNAKE_STATS } from "../constants";
+import { CHUNK_SIZE, COW_STATS, SNAKE_STATS, SCORPION_STATS, SPIDER_STATS, POISON_SPIDER_STATS, CONTAINER_SIZE, RABBIT_STATS, POISON_SNAKE_STATS, TOOL_CONFIG, ARMOR_STATS } from "../constants";
 
 export const dist = (x1: number, y1: number, x2: number, y2: number) => {
     return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
@@ -99,7 +99,24 @@ const generateSpiderChestLoot = (): (InventoryItem | null)[] => {
             for (let i = 0; i < CONTAINER_SIZE; i++) {
                 if (loot[slot] === null) {
                     const count = Math.floor(Math.random() * (entry.max - entry.min + 1)) + entry.min;
-                    loot[slot] = { type: entry.type, count };
+
+                    // Add durability for tools and armor
+                    let durability: number | undefined;
+                    let maxDurability: number | undefined;
+
+                    if (TOOL_CONFIG[entry.type]) {
+                        maxDurability = TOOL_CONFIG[entry.type].durability;
+                        durability = maxDurability;
+                    } else if (ARMOR_STATS[entry.type]) {
+                        maxDurability = ARMOR_STATS[entry.type].maxDurability;
+                        durability = maxDurability;
+                    }
+
+                    loot[slot] = {
+                        type: entry.type,
+                        count,
+                        ...(durability !== undefined && { durability, maxDurability })
+                    };
                     break;
                 }
                 slot = (slot + 1) % CONTAINER_SIZE;
@@ -191,11 +208,31 @@ export const generateChunk = (cx: number, cy: number): Chunk => {
                     const nestNoise = noise(gx * 0.6, gy * 0.6, 8888);
                     const isSpiderNest = nestNoise > 0.15;
 
+                    // Resource Richness Noise (High = Gold Rich, Low = Coal Rich)
+                    const resourceNoise = noise(gx * 0.8, gy * 0.8, 4444);
+
                     // 1. Standard Mountain Resources (Priority)
                     if (h < 0.1) objects[key] = TileType.ROCK;
-                    else if (h < 0.25) objects[key] = TileType.IRON_ORE;
-                    // Rare Gold Ore
-                    else if (h < 0.28) objects[key] = TileType.GOLD_ORE;
+                    else if (h < 0.25) {
+                        // Iron is standard
+                        objects[key] = TileType.IRON_ORE;
+                    }
+                    // Special Resource Logic (Coal vs Gold)
+                    else if (h < 0.35) {
+                        if (resourceNoise > 0.2) {
+                            // Gold Rich Area
+                            if (Math.random() < 0.6) objects[key] = TileType.GOLD_ORE;
+                            else objects[key] = TileType.COAL_ORE;
+                        } else if (resourceNoise < -0.2) {
+                            // Coal Rich Area
+                            if (Math.random() < 0.7) objects[key] = TileType.COAL_ORE;
+                            else objects[key] = TileType.GOLD_ORE;
+                        } else {
+                            // Balanced / Random
+                            if (Math.random() < 0.5) objects[key] = TileType.COAL_ORE;
+                            else objects[key] = TileType.GOLD_ORE;
+                        }
+                    }
 
                     // 2. Chests in Spider Nests
                     else if (isSpiderNest && h > 0.985) {
@@ -374,7 +411,7 @@ export const generateChunk = (cx: number, cy: number): Chunk => {
     }
 
     // Initialize terrainCache as null
-    return { x: cx, y: cy, tiles, objects, containers, entities, droppedItems: [], terrainCache: null };
+    return { x: cx, y: cy, tiles, objects, containers, entities, droppedItems: [], campfires: {}, terrainCache: null };
 };
 
 export const initWorld = (): World => {
