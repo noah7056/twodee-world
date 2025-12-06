@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { InventoryItem, ItemType, Recipe, EquipmentSlot, RecipeCategory } from '../types';
 import { RECIPES, ITEM_NAMES, INVENTORY_SIZE, CONTAINER_SIZE, BACKPACK_SIZE } from '../constants';
-import { X, Hammer, Box, Shield, HardHat, Search, Filter, Sparkles, Briefcase } from 'lucide-react';
+import { X, Hammer, Box, Shield, HardHat, Search, Filter, Sparkles, Briefcase, ArrowLeft } from 'lucide-react';
 import ItemGraphic from './ItemGraphic';
 import ItemTooltip from './ItemTooltip';
+import { isMobileDevice } from '../utils/mobileUtils';
 
 interface FullInventoryProps {
     isOpen: boolean;
@@ -36,19 +37,44 @@ const FullInventory: React.FC<FullInventoryProps> = ({
     const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState<RecipeCategory | 'all'>('all');
 
+    const [isMobile, setIsMobile] = useState(false);
+
     const cursorRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleWindowMouseMove = (e: MouseEvent) => {
+        setIsMobile(isMobileDevice());
+    }, []);
+
+    useEffect(() => {
+        const handleWindowMouseMove = (e: MouseEvent | TouchEvent) => {
             if (cursorRef.current) {
-                cursorRef.current.style.left = `${e.clientX}px`;
-                cursorRef.current.style.top = `${e.clientY}px`;
+                let clientX, clientY;
+                if ('touches' in e) {
+                    // Touch event
+                    const touch = e.touches[0];
+                    if (touch) {
+                        clientX = touch.clientX;
+                        clientY = touch.clientY;
+                    }
+                } else {
+                    clientX = (e as MouseEvent).clientX;
+                    clientY = (e as MouseEvent).clientY;
+                }
+
+                if (clientX !== undefined && clientY !== undefined) {
+                    cursorRef.current.style.left = `${clientX}px`;
+                    cursorRef.current.style.top = `${clientY}px`;
+                }
             }
         };
         if (isOpen) {
             window.addEventListener('mousemove', handleWindowMouseMove);
+            window.addEventListener('touchmove', handleWindowMouseMove);
         }
-        return () => window.removeEventListener('mousemove', handleWindowMouseMove);
+        return () => {
+            window.removeEventListener('mousemove', handleWindowMouseMove);
+            window.removeEventListener('touchmove', handleWindowMouseMove);
+        };
     }, [isOpen]);
 
     // Reset filters when opening
@@ -176,6 +202,13 @@ const FullInventory: React.FC<FullInventoryProps> = ({
                         }
                     }
                 }}
+                // Add touch handler for background tap drop
+                onTouchStart={(e) => {
+                    if (cursorStack) {
+                        // Drop whole stack on background tap
+                        onDropCursor();
+                    }
+                }}
                 onContextMenu={(e) => e.preventDefault()}
             />
 
@@ -188,7 +221,9 @@ const FullInventory: React.FC<FullInventoryProps> = ({
                 <div className="absolute bottom-2 left-2 w-3 h-3 bg-stone-500 rounded-full border border-black shadow-inner pointer-events-none z-20"></div>
                 <div className="absolute bottom-2 right-2 w-3 h-3 bg-stone-500 rounded-full border border-black shadow-inner pointer-events-none z-20"></div>
 
-                <button onClick={onClose} className="absolute top-4 right-4 text-stone-500 hover:text-amber-500 z-20 transition-colors"><X size={28} /></button>
+                <button onClick={onClose} className="absolute top-4 right-4 text-stone-500 hover:text-amber-500 z-20 transition-colors p-2 bg-black/20 rounded-full">
+                    {isMobile ? <ArrowLeft size={32} /> : <X size={28} />}
+                </button>
 
                 {/* Left: Player Stats & Equipment & Container */}
                 <div className="w-full md:w-1/3 bg-stone-900/50 p-6 flex flex-col border-r-4 border-stone-600 overflow-y-auto min-h-[300px]">

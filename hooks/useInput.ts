@@ -10,12 +10,12 @@ export const useInput = (disabled: boolean) => {
             keysPressed.current[e.key.toLowerCase()] = true;
         };
         const handleKeyUp = (e: KeyboardEvent) => {
-             keysPressed.current[e.key.toLowerCase()] = false;
+            keysPressed.current[e.key.toLowerCase()] = false;
         };
-        
-        const handleMouseMove = (e: MouseEvent) => { 
-            mouse.current.x = e.clientX; 
-            mouse.current.y = e.clientY; 
+
+        const handleMouseMove = (e: MouseEvent) => {
+            mouse.current.x = e.clientX;
+            mouse.current.y = e.clientY;
         };
         const handleMouseDown = (e: MouseEvent) => {
             if (disabled) return;
@@ -53,5 +53,13 @@ export const useInput = (disabled: boolean) => {
         }
     }, [disabled]);
 
-    return { keysPressed, mouse };
+    const setInputState = (key: string, pressed: boolean) => {
+        keysPressed.current[key.toLowerCase()] = pressed;
+    };
+
+    const setMouseState = (x: number, y: number, leftDown: boolean, rightDown: boolean) => {
+        mouse.current = { x, y, leftDown, rightDown };
+    };
+
+    return { keysPressed, mouse, setInputState, setMouseState };
 };

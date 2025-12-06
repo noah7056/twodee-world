@@ -1,12 +1,14 @@
 
 
 import React, { useEffect, useRef } from 'react';
-import { World, InventoryItem, Camera, Particle, SaveData, Settings, EquipmentSlot, ItemType } from '../types';
+import { World, InventoryItem, Camera, Particle, SaveData, Settings, EquipmentSlot, ItemType, TileType } from '../types';
 import { initWorld, getChunkCoords, getChunkKey } from '../utils/gameUtils';
 import { useInput } from '../hooks/useInput';
 import { drawWorld } from '../game/Renderer';
 import { updateGame, updateParticles } from '../game/GameLogic';
-import { TILE_SIZE, ARMOR_STATS, ITEM_NAMES } from '../constants';
+import { TILE_SIZE, ARMOR_STATS, ITEM_NAMES, COLLIDABLE_TILES, INTERACTABLE_TILES, TOOL_CONFIG } from '../constants';
+import { isMobileDevice } from '../utils/mobileUtils';
+import { MobileControls } from './mobile/MobileControls';
 
 interface GameEngineProps {
     onInventoryUpdate: (inv: (InventoryItem | null)[]) => void;
@@ -40,7 +42,7 @@ const GameEngine: React.FC<GameEngineProps> = ({
     onInventoryUpdate, onStatusUpdate, onStationUpdate, onContainerNearby, activeContainer,
     onStatsUpdate, onDeath, selectedItemIndex, inventory, isInventoryOpen, currentHealth,
     currentStamina, respawnTrigger, equipment, onEquipmentUpdate, dropAction, onDropActionHandled, isPaused,
-    initialData, onSave, onAutoSave, saveSignal, settings
+    initialData, onSave, onAutoSave, saveSignal, settings, onToggleInventory
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const requestRef = useRef<number>(0);
@@ -72,7 +74,137 @@ const GameEngine: React.FC<GameEngineProps> = ({
     const drivingRef = useRef<string | null>(null);
 
     // Custom Input Hook
-    const { keysPressed, mouse } = useInput(isPaused || isInventoryOpen);
+    const { keysPressed, mouse, setInputState, setMouseState } = useInput(isPaused || isInventoryOpen);
+    const [isMobile, setIsMobile] = React.useState(false);
+
+    // Mobile specific refs
+    const lastTouchRef = useRef<{ x: number, y: number } | null>(null);
+    const touchStartRef = useRef<{ x: number, y: number, time: number, id: number } | null>(null);
+    const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        setIsMobile(isMobileDevice());
+    }, []);
+
+    // Mobile Interaction Handlers
+    const handleTouchStart = (e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const x = touch.clientX;
+        const y = touch.clientY;
+
+        lastTouchRef.current = { x, y };
+        touchStartRef.current = { x, y, time: Date.now(), id: touch.identifier };
+
+        // Start Long Press Timer (for breaking)
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = setTimeout(() => {
+            // Long Press Detected: Start "Breaking" (Left Click Hold)
+            setMouseState(x, y, true, false);
+            touchStartRef.current = null; // Consume the touch for tap logic
+        }, 300); // 300ms for long press
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        // If moved significantly, cancel long press
+        if (touchStartRef.current) {
+            const dx = touch.clientX - touchStartRef.current.x;
+            const dy = touch.clientY - touchStartRef.current.y;
+            if (dx * dx + dy * dy > 100) { // 10px tolerance
+                if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                touchStartRef.current = null;
+                // It's a drag/swipe, maybe camera move or just ignored for now?
+                // For now, let's just update mouse pos but not click
+                setMouseState(touch.clientX, touch.clientY, false, false);
+            }
+        } else {
+            // If already breaking (long press triggered), update pos
+            setMouseState(touch.clientX, touch.clientY, true, false);
+        }
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+        setMouseState(0, 0, false, false); // Release clicks
+
+        // "Smart Tap" Logic
+        if (touchStartRef.current) {
+            const touch = e.changedTouches[0];
+            const dx = touch.clientX - touchStartRef.current.x;
+            const dy = touch.clientY - touchStartRef.current.y;
+            const dt = Date.now() - touchStartRef.current.time;
+
+            if (dt < 300 && dx * dx + dy * dy < 100) { // It was a tap
+                // Determine valid action based on context
+                const screenW = window.innerWidth;
+                const screenH = window.innerHeight;
+                const { zoom } = cameraRef.current;
+                const camX = cameraRef.current.x;
+                const camY = cameraRef.current.y;
+
+                const targetX = ((touch.clientX - (screenW / 2)) / zoom + (screenW / 2) + camX) / TILE_SIZE;
+                const targetY = ((touch.clientY - (screenH / 2)) / zoom + (screenH / 2) + camY) / TILE_SIZE;
+
+                const tileX = Math.floor(targetX);
+                const tileY = Math.floor(targetY);
+
+                // Use gameUtils logic duplicate (context check)
+                const { cx, cy, lx, ly } = getChunkCoords(tileX, tileY);
+                const key = getChunkKey(cx, cy);
+                const chunk = worldRef.current.chunks[key];
+
+                let action = 'attack'; // Default to attack (Left Click)
+
+                if (chunk) {
+                    const tile = chunk.tiles[ly][lx];
+                    const obj = chunk.objects[`${lx},${ly}`];
+                    // Priority 1: Interactables (Right Click)
+                    if (obj === TileType.CHEST || obj === TileType.CRAFTING_STATION) {
+                        action = 'interact';
+                    } else {
+                        // Priority 2: Holding Placeable/Eatable (Right Click)
+                        const heldItem = playerRef.current.inventory[playerRef.current.selectedItemIndex];
+                        if (heldItem) {
+                            // If food -> Eat (Right Click)
+                            // If block -> Place (Right Click)
+                            // Simple check: Is it a tool/weapon?
+                            const isTool = heldItem.type.includes('SWORD') || heldItem.type.includes('PICKAXE') || heldItem.type.includes('AXE');
+                            if (!isTool) {
+                                action = 'interact';
+                            }
+                        }
+                    }
+                }
+
+                // Trigger the action for one frame
+                if (action === 'interact') {
+                    setMouseState(touch.clientX, touch.clientY, false, true); // Right Click
+                } else {
+                    setMouseState(touch.clientX, touch.clientY, true, false); // Left Click
+                }
+
+                // Reset after short delay to simulate click
+                setTimeout(() => setMouseState(0, 0, false, false), 50);
+            }
+        }
+        touchStartRef.current = null;
+    };
+
+
+    // Modify Player Rotation Logic for Mobile
+    useEffect(() => {
+        if (isMobile) {
+            // Override rotation to follow joystick if moving, or last touch if interacting
+            // This needs to be hooked into the game loop update really, but we can patch it in updateGame logic too
+            // Actually `updateGame` calculates rotation from mouse pos. 
+            // If we update `mouse` ref with touch pos, it works for aiming.
+            // But for movement, we want to face joystick direction if not aiming.
+            // We can handle this by checking if we are "attacking/using" (mouse down).
+            // If mouse not down, face movement direction.
+        }
+    }, [isMobile]);
 
     // Initialization Effect
     useEffect(() => {
@@ -226,6 +358,7 @@ const GameEngine: React.FC<GameEngineProps> = ({
                     cameraRef.current.x,
                     cameraRef.current.y,
                     isInventoryOpen,
+                    isMobile,
                     {
                         driving: drivingRef,
                         breaking: breakingRef,
@@ -337,12 +470,26 @@ const GameEngine: React.FC<GameEngineProps> = ({
     }, [isPaused, isInventoryOpen, settings, inventory, equipment, currentHealth]);
 
     return (
-        <canvas
-            ref={canvasRef}
-            className="block fixed top-0 left-0 z-0"
-            role="application"
-            aria-label="Game World Canvas"
-        />
+        <>
+            <canvas
+                ref={canvasRef}
+                className="block fixed top-0 left-0 z-0"
+                role="application"
+                aria-label="Game World Canvas"
+                onTouchStart={isMobile ? handleTouchStart : undefined}
+                onTouchMove={isMobile ? handleTouchMove : undefined}
+                onTouchEnd={isMobile ? handleTouchEnd : undefined}
+            />
+            {isMobile && (
+                <MobileControls
+                    onInput={(keys) => {
+                        Object.entries(keys).forEach(([k, v]) => setInputState(k, v));
+                    }}
+                    onToggleInventory={onToggleInventory}
+                    isInventoryOpen={isInventoryOpen}
+                />
+            )}
+        </>
     );
 };
 

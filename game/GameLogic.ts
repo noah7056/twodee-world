@@ -97,6 +97,7 @@ export const updateGame = (
     camX: number,
     camY: number,
     isInventoryOpen: boolean,
+    isMobile: boolean,
     refs: {
         driving: { current: string | null },
         breaking: { current: { x: number, y: number, timer: number, maxTime: number } | null },
@@ -154,9 +155,17 @@ export const updateGame = (
             callbacks.onStatusUpdate("Exited Boat");
         }
 
-        const angle = Math.atan2(mouse.y - screenH / 2, mouse.x - screenW / 2);
-        player.rotation = angle;
-        const deg = (angle * 180) / Math.PI;
+        if (isMobile && !mouse.leftDown && !mouse.rightDown && (dx !== 0 || dy !== 0)) {
+            // Face movement direction on mobile if not attacking/interacting
+            const moveAngle = Math.atan2(dy, dx);
+            player.rotation = moveAngle;
+        } else {
+            const angle = Math.atan2(mouse.y - screenH / 2, mouse.x - screenW / 2);
+            player.rotation = angle;
+        }
+
+        // Simple facing direction logic (visuals)
+        const deg = (player.rotation * 180) / Math.PI;
         if (deg >= -45 && deg < 45) player.facing = 'right';
         else if (deg >= 45 && deg < 135) player.facing = 'down';
         else if (deg >= -135 && deg < -45) player.facing = 'up';
