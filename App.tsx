@@ -40,6 +40,8 @@ const App: React.FC = () => {
     const [saveSignal, setSaveSignal] = useState(0);
     const [isQuitting, setIsQuitting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [deathLocation, setDeathLocation] = useState<{ x: number, y: number, time: number } | null>(null);
+    const [deathDropItems, setDeathDropItems] = useState<{ id: string, items: (InventoryItem | null)[], equipment: { head: InventoryItem | null; body: InventoryItem | null; accessory: InventoryItem | null; bag: InventoryItem | null; }, pos: { x: number, y: number } } | null>(null);
 
     // Inventory Management Hook
     const {
@@ -74,12 +76,24 @@ const App: React.FC = () => {
         else if (id === null) setContainerItems(null);
     };
 
-    const handleDeath = () => {
+    const handleDeath = (deathX?: number, deathY?: number) => {
+        // Record death location and items to drop
+        if (deathX !== undefined && deathY !== undefined) {
+            setDeathLocation({ x: deathX, y: deathY, time: Date.now() });
+            // Queue items to be dropped by GameEngine
+            setDeathDropItems({
+                id: `death-${Date.now()}-${Math.random()}`,
+                items: [...inventory],
+                equipment: { ...equipment },
+                pos: { x: deathX, y: deathY }
+            });
+        }
+
         setHealth(MAX_HEALTH); setStamina(MAX_STAMINA);
         setInventory(Array(INVENTORY_SIZE).fill(null));
         setEquipment({ head: null, body: null, accessory: null, bag: null });
         setSelectedItemIndex(0); setCursorStack(null);
-        setStatusMessage("You Died! Inventory Lost.");
+        setStatusMessage("You Died! Return to recover your items.");
         setRespawnTrigger(prev => prev + 1); setIsInventoryOpen(false);
     };
 
@@ -177,6 +191,8 @@ const App: React.FC = () => {
                         activeContainer={nearbyContainerId && containerItems ? { id: nearbyContainerId, items: containerItems } : null}
                         onStatsUpdate={(hp, stam) => { setHealth(hp); setStamina(stam); }}
                         onDeath={handleDeath}
+                        deathDropItems={deathDropItems}
+                        onDeathDropsHandled={() => setDeathDropItems(null)}
                         selectedItemIndex={selectedItemIndex}
                         setSelectedItem={setSelectedItemIndex}
                         isInventoryOpen={isInventoryOpen}
@@ -194,6 +210,7 @@ const App: React.FC = () => {
                         saveSignal={saveSignal}
                         settings={settings}
                         onToggleInventory={() => setIsInventoryOpen(prev => !prev)}
+                        deathLocation={deathLocation}
                     />
 
                     <HUD

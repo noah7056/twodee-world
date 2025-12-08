@@ -654,9 +654,10 @@ const handleBreaking = (dt: number, targetX: number, targetY: number, world: Wor
             if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("Need a pickaxe for stone walls!");
         }
 
-        // Stone/Rock: pickaxe is faster but not required
+        // Stone/Rock: REQUIRES pickaxe now
         if (isStone && !isPick) {
-            // Not "wrong tool" but will be slow - handled by speedMultiplier below
+            isWrongTool = true;
+            if (refs.breaking.current === null && Math.random() < 0.05) callbacks.onStatusUpdate("Need a pickaxe to mine stone!");
         }
 
         // Furniture (chest, crafting station) - no tool needed

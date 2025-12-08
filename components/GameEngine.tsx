@@ -9,6 +9,7 @@ import { updateGame, updateParticles } from '../game/GameLogic';
 import { TILE_SIZE, ARMOR_STATS, ITEM_NAMES, COLLIDABLE_TILES, INTERACTABLE_TILES, TOOL_CONFIG } from '../constants';
 import { isMobileDevice } from '../utils/mobileUtils';
 import { MobileControls } from './mobile/MobileControls';
+import Minimap from './Minimap';
 
 interface GameEngineProps {
     onInventoryUpdate: (inv: (InventoryItem | null)[]) => void;
@@ -17,7 +18,9 @@ interface GameEngineProps {
     onContainerNearby: (id: string | null, items: (InventoryItem | null)[] | null) => void;
     activeContainer: { id: string, items: (InventoryItem | null)[] } | null;
     onStatsUpdate: (hp: number, stam: number) => void;
-    onDeath: () => void;
+    onDeath: (deathX?: number, deathY?: number) => void;
+    deathDropItems: { id: string, items: (InventoryItem | null)[], equipment: { head: InventoryItem | null; body: InventoryItem | null; accessory: InventoryItem | null; bag: InventoryItem | null; }, pos: { x: number, y: number } } | null;
+    onDeathDropsHandled: () => void;
     setSelectedItem: (idx: number) => void;
     selectedItemIndex: number;
     inventory: (InventoryItem | null)[];
@@ -36,13 +39,14 @@ interface GameEngineProps {
     saveSignal: number;
     settings: Settings;
     onToggleInventory: () => void;
+    deathLocation: { x: number, y: number, time: number } | null;
 }
 
 const GameEngine: React.FC<GameEngineProps> = ({
     onInventoryUpdate, onStatusUpdate, onStationUpdate, onContainerNearby, activeContainer,
-    onStatsUpdate, onDeath, selectedItemIndex, inventory, isInventoryOpen, currentHealth,
+    onStatsUpdate, onDeath, deathDropItems, onDeathDropsHandled, selectedItemIndex, inventory, isInventoryOpen, currentHealth,
     currentStamina, respawnTrigger, equipment, onEquipmentUpdate, dropAction, onDropActionHandled, isPaused,
-    initialData, onSave, onAutoSave, saveSignal, settings, onToggleInventory
+    initialData, onSave, onAutoSave, saveSignal, settings, onToggleInventory, deathLocation
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const requestRef = useRef<number>(0);
@@ -72,10 +76,12 @@ const GameEngine: React.FC<GameEngineProps> = ({
     const attackCooldownRef = useRef<number>(0);
     const poisonTickRef = useRef<number>(0);
     const drivingRef = useRef<string | null>(null);
+    const lastDeathDropRef = useRef<string | null>(null); // Track processed death drops to prevent duplicates
 
     // Custom Input Hook
     const { keysPressed, mouse, setInputState, setMouseState } = useInput(isPaused || isInventoryOpen);
     const [isMobile, setIsMobile] = React.useState(false);
+    const [playerPosition, setPlayerPosition] = React.useState({ x: 0, y: 0 });
 
     // Mobile specific refs
     const lastTouchRef = useRef<{ x: number, y: number } | null>(null);
@@ -331,6 +337,78 @@ const GameEngine: React.FC<GameEngineProps> = ({
         }
     }, [respawnTrigger]);
 
+    // Death Drops Effect - drop all items at death location
+    useEffect(() => {
+        if (deathDropItems) {
+            // Skip if we already processed this exact death drop (using unique ID)
+            if (lastDeathDropRef.current === deathDropItems.id) {
+                onDeathDropsHandled();
+                return;
+            }
+
+            lastDeathDropRef.current = deathDropItems.id;
+
+            const { items, equipment: eq, pos } = deathDropItems;
+            const { cx, cy } = getChunkCoords(pos.x, pos.y);
+            const key = getChunkKey(cx, cy);
+
+            if (worldRef.current.chunks[key]) {
+                const chunk = worldRef.current.chunks[key];
+                let dropOffset = 0;
+
+                // Drop inventory items
+                items.forEach((item, index) => {
+                    if (item) {
+                        const angle = (index / items.length) * Math.PI * 2;
+                        const dropX = pos.x + Math.cos(angle) * 0.5;
+                        const dropY = pos.y + Math.sin(angle) * 0.5;
+
+                        chunk.droppedItems.push({
+                            id: `death-drop-${Date.now()}-${dropOffset++}`,
+                            type: item.type,
+                            count: item.count,
+                            x: dropX,
+                            y: dropY,
+                            durability: item.durability,
+                            maxDurability: item.maxDurability,
+                            contents: item.contents,
+                            pickupDelay: 1.0,
+                            floatOffset: Math.random() * Math.PI * 2,
+                            lifeTime: 600 // 10 minutes for death drops
+                        });
+                    }
+                });
+
+                // Drop equipment items
+                const eqSlots: ('head' | 'body' | 'accessory' | 'bag')[] = ['head', 'body', 'accessory', 'bag'];
+                eqSlots.forEach((slot, index) => {
+                    const item = eq[slot];
+                    if (item) {
+                        const angle = (index / eqSlots.length) * Math.PI * 2 + Math.PI / 4;
+                        const dropX = pos.x + Math.cos(angle) * 0.7;
+                        const dropY = pos.y + Math.sin(angle) * 0.7;
+
+                        chunk.droppedItems.push({
+                            id: `death-drop-eq-${Date.now()}-${dropOffset++}`,
+                            type: item.type,
+                            count: item.count,
+                            x: dropX,
+                            y: dropY,
+                            durability: item.durability,
+                            maxDurability: item.maxDurability,
+                            contents: item.contents,
+                            pickupDelay: 1.0,
+                            floatOffset: Math.random() * Math.PI * 2,
+                            lifeTime: 600
+                        });
+                    }
+                });
+            }
+
+            onDeathDropsHandled();
+        }
+    }, [deathDropItems, onDeathDropsHandled]);
+
     // Game Loop
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -438,7 +516,7 @@ const GameEngine: React.FC<GameEngineProps> = ({
                             }
                         },
                         onStatsUpdate: onStatsUpdate,
-                        onDeath: onDeath,
+                        onDeath: () => onDeath(playerRef.current.x, playerRef.current.y),
                         onContainerNearby: onContainerNearby,
                         onStationUpdate: onStationUpdate
                     }
@@ -450,6 +528,9 @@ const GameEngine: React.FC<GameEngineProps> = ({
                 // Center the player on the screen
                 cameraRef.current.x = playerRef.current.x * TILE_SIZE - window.innerWidth / 2;
                 cameraRef.current.y = playerRef.current.y * TILE_SIZE - window.innerHeight / 2;
+
+                // Update player position for Minimap
+                setPlayerPosition({ x: playerRef.current.x, y: playerRef.current.y });
             }
 
             // Draw
@@ -487,10 +568,19 @@ const GameEngine: React.FC<GameEngineProps> = ({
             {isMobile && (
                 <MobileControls
                     onInput={(keys) => {
-                        Object.entries(keys).forEach(([k, v]) => setInputState(k, v));
+                        Object.entries(keys).forEach(([k, v]) => setInputState(k, v as boolean));
                     }}
                     onToggleInventory={onToggleInventory}
                     isInventoryOpen={isInventoryOpen}
+                />
+            )}
+            {/* Minimap - only show when player has MAP item */}
+            {!isInventoryOpen && !isPaused && inventory.some(item => item?.type === ItemType.MAP) && (
+                <Minimap
+                    world={worldRef.current}
+                    playerX={playerPosition.x}
+                    playerY={playerPosition.y}
+                    deathLocation={deathLocation}
                 />
             )}
         </>

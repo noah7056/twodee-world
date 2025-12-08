@@ -128,6 +128,8 @@ export const ITEM_NAMES: Record<string, string> = {
   [ItemType.POISON_ARROW]: 'Poison Arrow',
   [ItemType.COAL]: 'Coal',
   [ItemType.CAMPFIRE]: 'Campfire',
+  [ItemType.PAPER]: 'Paper',
+  [ItemType.MAP]: 'Map',
 };
 
 // Tool Configuration
@@ -312,7 +314,7 @@ export const RECIPES: Recipe[] = [
   {
     result: ItemType.CRAFTING_STATION_ITEM,
     count: 1,
-    ingredients: [{ type: ItemType.WOOD, count: 10 }],
+    ingredients: [{ type: ItemType.WOOD, count: 6 }],
     description: "Required for advanced crafting.",
     requiresStation: false,
     category: 'block'
@@ -607,6 +609,22 @@ export const RECIPES: Recipe[] = [
     count: 1,
     ingredients: [{ type: ItemType.WOOD, count: 3 }, { type: ItemType.STONE, count: 1 }, { type: ItemType.COAL, count: 1 }],
     description: "Heals nearby players when lit.",
+    requiresStation: true,
+    category: 'misc'
+  },
+  {
+    result: ItemType.PAPER,
+    count: 1,
+    ingredients: [{ type: ItemType.PLANT_FIBER, count: 2 }],
+    description: "Made from plant fibers.",
+    requiresStation: false,
+    category: 'misc'
+  },
+  {
+    result: ItemType.MAP,
+    count: 1,
+    ingredients: [{ type: ItemType.PAPER, count: 5 }],
+    description: "Shows a minimap of the world.",
     requiresStation: true,
     category: 'misc'
   }

@@ -75,6 +75,19 @@ const drawItemSprite = (ctx: CanvasRenderingContext2D, type: ItemType) => {
         ctx.translate(24, 30); ctx.rotate(Math.PI / 4); ctx.fillRect(-12, -3, 24, 6); ctx.rotate(-Math.PI / 4); ctx.translate(-24, -30);
         ctx.fillStyle = '#EF4444'; ctx.beginPath(); ctx.moveTo(24, 30); ctx.quadraticCurveTo(34, 10, 24, 10); ctx.quadraticCurveTo(14, 10, 24, 30); ctx.fill();
     }
+    else if (type === ItemType.PAPER) {
+        ctx.fillStyle = '#FEF3C7'; ctx.strokeStyle = '#D97706'; ctx.lineWidth = 1;
+        ctx.fillRect(12, 10, 24, 28); ctx.strokeRect(12, 10, 24, 28);
+        ctx.strokeStyle = '#E5E7EB'; ctx.beginPath(); ctx.moveTo(12, 18); ctx.lineTo(36, 18); ctx.moveTo(12, 26); ctx.lineTo(36, 26); ctx.stroke();
+    }
+    else if (type === ItemType.MAP) {
+        ctx.fillStyle = '#FEF3C7'; ctx.strokeStyle = '#B45309'; ctx.lineWidth = 1;
+        ctx.fillRect(10, 12, 28, 24); ctx.strokeRect(10, 12, 28, 24);
+        ctx.strokeStyle = '#16A34A'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(14, 20); ctx.quadraticCurveTo(24, 14, 34, 20); ctx.stroke();
+        ctx.strokeStyle = '#3B82F6'; ctx.beginPath(); ctx.moveTo(14, 28); ctx.quadraticCurveTo(24, 24, 34, 30); ctx.stroke();
+        ctx.fillStyle = '#EF4444'; ctx.beginPath(); ctx.arc(22, 24, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#D97706'; ctx.fillRect(8, 10, 32, 3); ctx.fillRect(8, 35, 32, 3);
+    }
     else { ctx.fillStyle = '#60A5FA'; ctx.fillRect(16, 16, 16, 16); }
 };
 
@@ -265,7 +278,7 @@ export const drawWorld = (
                             const drawSpot = (ox: number, oy: number) => { ctx.beginPath(); ctx.arc(tx + TILE_SIZE * ox, ty + TILE_SIZE * oy, 3, 0, Math.PI * 2); ctx.fill(); };
                             drawSpot(0.4, 0.4); drawSpot(0.6, 0.3); drawSpot(0.5, 0.7);
                         } else if (obj === TileType.CRAFTING_STATION) {
-                            ctx.fillStyle = '#9f1239'; ctx.fillRect(tx + 4, ty + 12, TILE_SIZE - 8, TILE_SIZE - 16); ctx.fillStyle = '#e11d48'; ctx.fillRect(tx + 2, ty + 10, TILE_SIZE - 4, 10); ctx.fillStyle = 'white'; ctx.font = '16px serif'; ctx.fillText('⚒️', tx + 12, ty + 35);
+                            ctx.fillStyle = '#9f1239'; ctx.fillRect(tx + 4, ty + 12, TILE_SIZE - 8, TILE_SIZE - 16); ctx.fillStyle = '#e11d48'; ctx.fillRect(tx + 2, ty + 10, TILE_SIZE - 4, 10);
                         } else if (obj === TileType.WALL_WOOD) {
                             ctx.fillStyle = '#78350f'; ctx.fillRect(tx, ty, TILE_SIZE, TILE_SIZE); ctx.fillStyle = '#451a03'; ctx.fillRect(tx + 4, ty + 4, 2, TILE_SIZE - 8); ctx.fillRect(tx + TILE_SIZE / 2 - 1, ty + 4, 2, TILE_SIZE - 8); ctx.fillRect(tx + TILE_SIZE - 6, ty + 4, 2, TILE_SIZE - 8); ctx.fillRect(tx, ty + 10, TILE_SIZE, 2); ctx.fillRect(tx, ty + TILE_SIZE - 12, TILE_SIZE, 2);
                         } else if (obj === TileType.WALL_STONE) {

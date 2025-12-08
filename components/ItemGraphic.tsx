@@ -458,6 +458,35 @@ const ItemGraphic: React.FC<ItemGraphicProps> = ({ type, size = 48, className = 
                     <path d="M24 32 Q26 26 24 20 Q22 26 24 32Z" fill="#FCD34D" />
                 </g>
             )}
+
+            {type === ItemType.PAPER && (
+                <g>
+                    {/* Paper sheet */}
+                    <rect x="10" y="8" width="28" height="32" fill="#FEF3C7" stroke="#D97706" strokeWidth="2" />
+                    {/* Fold lines */}
+                    <path d="M10 16H38" stroke="#E5E7EB" strokeWidth="1" />
+                    <path d="M10 24H38" stroke="#E5E7EB" strokeWidth="1" />
+                    <path d="M10 32H38" stroke="#E5E7EB" strokeWidth="1" />
+                    {/* Corner fold */}
+                    <path d="M30 8L38 16L30 16Z" fill="#FDE68A" stroke="#D97706" strokeWidth="1" />
+                </g>
+            )}
+
+            {type === ItemType.MAP && (
+                <g>
+                    {/* Rolled parchment base */}
+                    <rect x="8" y="10" width="32" height="28" rx="2" fill="#FEF3C7" stroke="#B45309" strokeWidth="2" />
+                    {/* Map details - simplified world */}
+                    <path d="M12 18Q18 14 24 18T36 18" stroke="#16A34A" strokeWidth="2" fill="none" />
+                    <path d="M12 26Q20 22 28 28T36 24" stroke="#3B82F6" strokeWidth="2" fill="none" />
+                    <circle cx="20" cy="22" r="2" fill="#EF4444" />
+                    {/* X marker */}
+                    <path d="M30 30L34 34M34 30L30 34" stroke="#EF4444" strokeWidth="2" />
+                    {/* Roll ends */}
+                    <rect x="6" y="8" width="36" height="4" rx="2" fill="#D97706" />
+                    <rect x="6" y="36" width="36" height="4" rx="2" fill="#D97706" />
+                </g>
+            )}
         </svg>
     );
 };

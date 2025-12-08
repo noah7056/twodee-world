@@ -206,7 +206,7 @@ export const generateChunk = (cx: number, cy: number): Chunk => {
                 if (tile === TileType.MOUNTAIN) {
                     // Spider Nest Logic
                     const nestNoise = noise(gx * 0.6, gy * 0.6, 8888);
-                    const isSpiderNest = nestNoise > 0.15;
+                    const isSpiderNest = nestNoise > 0.35;
 
                     // Resource Richness Noise (High = Gold Rich, Low = Coal Rich)
                     const resourceNoise = noise(gx * 0.8, gy * 0.8, 4444);
@@ -234,8 +234,8 @@ export const generateChunk = (cx: number, cy: number): Chunk => {
                         }
                     }
 
-                    // 2. Chests in Spider Nests
-                    else if (isSpiderNest && h > 0.985) {
+                    // 2. Chests in Spider Nests (very rare, 1-3 per nest)
+                    else if (isSpiderNest && h > 0.995) {
                         objects[key] = TileType.CHEST;
                         containers[key] = generateSpiderChestLoot();
                     }

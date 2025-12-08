@@ -92,6 +92,8 @@ export enum ItemType {
   POISON_ARROW = 'POISON_ARROW',
   COAL = 'COAL',
   CAMPFIRE = 'CAMPFIRE',
+  PAPER = 'PAPER',
+  MAP = 'MAP',
 }
 
 export enum EntityType {
